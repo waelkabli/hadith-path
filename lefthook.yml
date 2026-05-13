@@ -1,0 +1,21 @@
+# Lefthook configuration
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  jobs:
+    # biome check = format + lint + import sorting in one atomic pass.
+    # Splitting into separate format/lint jobs risks concurrent write conflicts.
+    - name: biome
+      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,css}"
+      run: bun biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
+
+    - name: typecheck
+      glob: "*.{ts,tsx}"
+      run: bun turbo check-types
+
+pre-push:
+  jobs:
+    - name: tests
+      run: bun test
