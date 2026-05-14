@@ -15,7 +15,14 @@ const EXAMPLE_NARRATOR_LIST = [
 const claudeResponse = (narrators: unknown) =>
 	new Response(
 		JSON.stringify({
-			content: [{ type: "text", text: JSON.stringify({ narrators }) }],
+			content: [
+				{
+					type: "tool_use",
+					id: "toolu_01",
+					name: "report_narrators",
+					input: { narrators },
+				},
+			],
 		}),
 		{ status: 200, headers: { "Content-Type": "application/json" } },
 	);
@@ -68,7 +75,7 @@ describe("extractNarrators", () => {
 		expect(extractNarrators(EXAMPLE_ISNAD, VALID_API_KEY)).rejects.toThrow();
 	});
 
-	it("throws when the response text is not valid JSON", async () => {
+	it("throws when the response has no tool_use block", async () => {
 		globalThis.fetch = mock(() =>
 			Promise.resolve(
 				new Response(
@@ -83,7 +90,7 @@ describe("extractNarrators", () => {
 		expect(extractNarrators(EXAMPLE_ISNAD, VALID_API_KEY)).rejects.toThrow();
 	});
 
-	it("throws when the response JSON is missing the narrators array", async () => {
+	it("throws when the tool_use block is missing the narrators array", async () => {
 		globalThis.fetch = mock(() =>
 			Promise.resolve(claudeResponse(undefined)),
 		) as typeof fetch;

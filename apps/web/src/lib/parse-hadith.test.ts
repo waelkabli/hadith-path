@@ -8,7 +8,14 @@ const VALID_API_KEY = "sk-ant-test-key";
 const successResponse = (splitAt: number, status = 200) =>
 	new Response(
 		JSON.stringify({
-			content: [{ type: "text", text: JSON.stringify({ splitAt }) }],
+			content: [
+				{
+					type: "tool_use",
+					id: "toolu_01",
+					name: "report_split",
+					input: { splitAt },
+				},
+			],
 		}),
 		{ status, headers: { "Content-Type": "application/json" } },
 	);
@@ -53,12 +60,12 @@ describe("parseHadith", () => {
 		expect(parseHadith(VALID_HADITH, VALID_API_KEY)).rejects.toThrow();
 	});
 
-	it("throws when the response text is not valid JSON", async () => {
+	it("throws when the response has no tool_use block", async () => {
 		globalThis.fetch = mock(() =>
 			Promise.resolve(
 				new Response(
 					JSON.stringify({
-						content: [{ type: "text", text: "not a json object" }],
+						content: [{ type: "text", text: "some unexpected text" }],
 					}),
 					{ status: 200 },
 				),
@@ -68,12 +75,19 @@ describe("parseHadith", () => {
 		expect(parseHadith(VALID_HADITH, VALID_API_KEY)).rejects.toThrow();
 	});
 
-	it("throws when the response JSON is missing the splitAt field", async () => {
+	it("throws when the tool_use block is missing the splitAt field", async () => {
 		globalThis.fetch = mock(() =>
 			Promise.resolve(
 				new Response(
 					JSON.stringify({
-						content: [{ type: "text", text: '{"boundary": 52}' }],
+						content: [
+							{
+								type: "tool_use",
+								id: "toolu_01",
+								name: "report_split",
+								input: { boundary: 52 },
+							},
+						],
 					}),
 					{ status: 200 },
 				),

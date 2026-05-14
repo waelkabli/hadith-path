@@ -12,9 +12,24 @@ Critical rules:
 1. splitAt must point to the first character of the first word of the matn — it must always be preceded by a space, colon, or comma. Never return an offset that falls in the middle of a word or name.
 2. Narrator names are always in the isnad. Never cut through a name.
 3. The split typically falls just after the last "قَالَ:" that introduces the final narrator's direct report before the Prophet's statement begins.
-4. splitAt is a Unicode code-unit index (JavaScript string index), not a byte offset.
+4. splitAt is a Unicode code-unit index (JavaScript string index), not a byte offset.`;
 
-Return ONLY valid JSON with no explanation: {"splitAt": <number>}`;
+const SPLIT_TOOL = {
+	name: "report_split" as const,
+	description:
+		"Report the character offset where the isnad ends and the matn begins.",
+	input_schema: {
+		type: "object" as const,
+		properties: {
+			splitAt: {
+				type: "integer",
+				description:
+					"Unicode code-unit index (JavaScript string index) of the first character of the matn.",
+			},
+		},
+		required: ["splitAt"],
+	},
+};
 
 const FEW_SHOT = [
 	{
@@ -26,17 +41,40 @@ const FEW_SHOT = [
 		role: "assistant" as const,
 		// isnad ends: "...الْمِنْبَرِ قَالَ: "
 		// matn starts: "سَمِعْتُ رَسُولَ اللَّهِ..."
-		content: '{"splitAt": 347}',
+		content: [
+			{
+				type: "tool_use",
+				id: "toolu_example_01",
+				name: "report_split",
+				input: { splitAt: 347 },
+			},
+		],
+	},
+	{
+		role: "user" as const,
+		content: [
+			{
+				type: "tool_result",
+				tool_use_id: "toolu_example_01",
+				content: "OK",
+			},
+		],
 	},
 ];
 
 function snapToWordStart(text: string, offset: number): number {
 	if (offset <= 0) return 0;
 	if (offset >= text.length) return text.length;
-	// Walk back until we are at the start of a word
 	let i = offset;
 	while (i > 0 && text[i - 1] !== " " && text[i - 1] !== "\n") i--;
 	return i;
+}
+
+interface ToolUseBlock {
+	type: "tool_use";
+	id: string;
+	name: string;
+	input: Record<string, unknown>;
 }
 
 export async function parseHadith(
@@ -45,8 +83,10 @@ export async function parseHadith(
 ): Promise<{ splitAt: number }> {
 	const requestBody = {
 		model: "claude-sonnet-4-6",
-		max_tokens: 64,
+		max_tokens: 256,
 		system: SYSTEM_PROMPT,
+		tools: [SPLIT_TOOL],
+		tool_choice: { type: "tool", name: "report_split" },
 		messages: [...FEW_SHOT, { role: "user", content: text }],
 	};
 
@@ -83,39 +123,22 @@ export async function parseHadith(
 	}
 
 	const data = await response.json();
-	const rawText = data?.content?.[0]?.text;
+	const toolUse = (data?.content as ToolUseBlock[] | undefined)?.find(
+		(b) => b.type === "tool_use" && b.name === "report_split",
+	);
 
-	if (typeof rawText !== "string") {
-		debugLog.push("error", "Unexpected response shape", data);
-		throw new Error("Unexpected response format from Claude");
-	}
-
-	// Try direct parse first; fall back to extracting JSON from reasoning text
-	let parsed: unknown;
-	const jsonMatch = rawText.match(/\{"splitAt"\s*:\s*-?\d+\s*\}/);
-	try {
-		parsed = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
-	} catch {
-		debugLog.push("error", "Response not valid JSON", rawText);
-		throw new Error("Claude response was not valid JSON");
-	}
-
-	if (typeof (parsed as Record<string, unknown>)?.splitAt !== "number") {
-		debugLog.push("error", "Missing splitAt field", parsed);
+	if (!toolUse || typeof toolUse.input?.splitAt !== "number") {
+		debugLog.push("error", "No valid tool_use block in response", data);
 		throw new Error("Claude response missing splitAt field");
 	}
 
-	const rawOffset = (parsed as { splitAt: number }).splitAt;
+	const rawOffset = toolUse.input.splitAt as number;
 	const splitAt = snapToWordStart(text, rawOffset);
 
 	debugLog.push(
 		"response",
 		`HTTP ${response.status} — splitAt ${rawOffset} → ${splitAt}`,
-		{
-			rawOffset,
-			snappedSplitAt: splitAt,
-			rawResponse: rawText,
-		},
+		{ rawOffset, snappedSplitAt: splitAt },
 	);
 
 	// TODO: dispatch to additional providers (Gemini, OpenAI) here

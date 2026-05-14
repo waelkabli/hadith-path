@@ -10,7 +10,14 @@ const VALID_HADITH =
 const makeClaudeResponse = (splitAt: number): Response =>
 	new Response(
 		JSON.stringify({
-			content: [{ type: "text", text: JSON.stringify({ splitAt }) }],
+			content: [
+				{
+					type: "tool_use",
+					id: "toolu_01",
+					name: "report_split",
+					input: { splitAt },
+				},
+			],
 		}),
 		{ status: 200 },
 	);
