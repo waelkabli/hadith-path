@@ -1,9 +1,14 @@
 import { Link } from "@tanstack/react-router";
+import { Settings } from "lucide-react";
+import { useState } from "react";
 
+import { ApiKeySettings } from "./api-key-settings";
 import { ModeToggle } from "./mode-toggle";
 import UserMenu from "./user-menu";
 
 export default function Header() {
+	const [settingsOpen, setSettingsOpen] = useState(false);
+
 	const links = [
 		{ to: "/", label: "Home" },
 		{ to: "/dashboard", label: "Dashboard" },
@@ -22,11 +27,23 @@ export default function Header() {
 					})}
 				</nav>
 				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						className="btn-icon"
+						onClick={() => setSettingsOpen(true)}
+						aria-label="الإعدادات"
+					>
+						<Settings />
+					</button>
 					<ModeToggle />
 					<UserMenu />
 				</div>
 			</div>
 			<hr />
+			<ApiKeySettings
+				isOpen={settingsOpen}
+				onClose={() => setSettingsOpen(false)}
+			/>
 		</div>
 	);
 }

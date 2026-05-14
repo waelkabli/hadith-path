@@ -5,10 +5,10 @@ const VALID_HADITH =
 	"حدثنا عبد الله بن يوسف أخبرنا مالك عن ابن شهاب عن أنس بن مالك أن رسول الله دخل مكة";
 const VALID_API_KEY = "sk-ant-test-key";
 
-const jsonResponse = (body: unknown, status = 200) =>
+const successResponse = (splitAt: number, status = 200) =>
 	new Response(
 		JSON.stringify({
-			content: [{ type: "text", text: JSON.stringify(body) }],
+			content: [{ type: "text", text: JSON.stringify({ splitAt }) }],
 		}),
 		{ status, headers: { "Content-Type": "application/json" } },
 	);
@@ -29,11 +29,11 @@ afterEach(() => {
 describe("parseHadith", () => {
 	it("returns a numeric splitAt offset for a valid Claude response", async () => {
 		globalThis.fetch = mock(() =>
-			Promise.resolve(jsonResponse({ splitAt: 52 })),
+			Promise.resolve(successResponse(50)),
 		) as typeof fetch;
 
 		const result = await parseHadith(VALID_HADITH, VALID_API_KEY);
-		expect(result.splitAt).toBe(52);
+		expect(result.splitAt).toBe(50);
 		expect(typeof result.splitAt).toBe("number");
 	});
 
@@ -70,7 +70,14 @@ describe("parseHadith", () => {
 
 	it("throws when the response JSON is missing the splitAt field", async () => {
 		globalThis.fetch = mock(() =>
-			Promise.resolve(jsonResponse({ boundary: 52 })),
+			Promise.resolve(
+				new Response(
+					JSON.stringify({
+						content: [{ type: "text", text: '{"boundary": 52}' }],
+					}),
+					{ status: 200 },
+				),
+			),
 		) as typeof fetch;
 
 		expect(parseHadith(VALID_HADITH, VALID_API_KEY)).rejects.toThrow();

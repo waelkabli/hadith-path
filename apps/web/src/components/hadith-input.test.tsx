@@ -162,14 +162,14 @@ describe("HadithInput", () => {
 	});
 
 	describe("submitted state", () => {
-		it("textarea is readOnly after a valid submit resolves", async () => {
+		it("textarea is replaced by a compact summary row after a valid submit resolves", async () => {
 			const onSubmit = mock(async () => {});
 			render(<HadithInput onSubmit={onSubmit} />);
 			await act(async () => {
 				screen.getByRole("button", { name: "تحليل الحديث" }).click();
 			});
-			const textarea = screen.getByRole("textbox") as HTMLTextAreaElement;
-			expect(textarea.readOnly).toBe(true);
+			expect(screen.queryByRole("textbox")).toBeNull();
+			expect(screen.getByTestId("compact-summary")).toBeDefined();
 		});
 
 		it("shows a reset button after submission", async () => {
