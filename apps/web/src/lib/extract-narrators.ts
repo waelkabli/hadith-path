@@ -1,7 +1,92 @@
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
 
-const SYSTEM_PROMPT =
-	"You are an expert in hadith sciences. Extract each narrator from the isnad (chain of narrators) in the given Arabic text.";
+const SYSTEM_PROMPT = `You are an expert in classical Islamic hadith sciences. Given the isnad (chain of narrators) of a hadith, extract every narrator name in the exact order they appear.
+
+Rules:
+1. Extract narrator names only — skip transmission verbs (حَدَّثَنَا، أَخْبَرَنَا، قَالَ، عَنْ، سَمِعْتُ، رَوَى).
+2. Preserve the complete name as it appears (including كنية, لقب, نسب — e.g. "عَبْدُ اللَّهِ بْنُ يُوسُفَ").
+3. position is 0-indexed in the order narrators appear (the first narrator who transmits is position 0).
+4. mentionStart and mentionEnd are Unicode code-unit offsets in the isnad string (mentionEnd is exclusive).
+5. Return narrators sorted ascending by position.`;
+
+const FEW_SHOT = [
+	// Example 1: simple chain with عن
+	{
+		role: "user" as const,
+		content: "مالك عن نافع عن ابن عمر",
+	},
+	{
+		role: "assistant" as const,
+		content: [
+			{
+				type: "tool_use",
+				id: "toolu_ex1",
+				name: "report_narrators",
+				input: {
+					narrators: [
+						{ name: "مالك", position: 0, mentionStart: 0, mentionEnd: 4 },
+						{ name: "نافع", position: 1, mentionStart: 8, mentionEnd: 12 },
+						{ name: "ابن عمر", position: 2, mentionStart: 16, mentionEnd: 23 },
+					],
+				},
+			},
+		],
+	},
+	// Example 2: chain beginning with حدثنا / أخبرنا
+	{
+		role: "user" as const,
+		content: "حدثنا يحيى بن سعيد قال أخبرنا مالك عن نافع",
+	},
+	{
+		role: "assistant" as const,
+		content: [
+			{
+				type: "tool_use",
+				id: "toolu_ex2",
+				name: "report_narrators",
+				input: {
+					narrators: [
+						{
+							name: "يحيى بن سعيد",
+							position: 0,
+							mentionStart: 7,
+							mentionEnd: 20,
+						},
+						{ name: "مالك", position: 1, mentionStart: 31, mentionEnd: 35 },
+						{ name: "نافع", position: 2, mentionStart: 39, mentionEnd: 43 },
+					],
+				},
+			},
+		],
+	},
+	// Example 3: chain ending with a Companion narrator
+	{
+		role: "user" as const,
+		content: "أخبرنا شعبة عن قتادة عن أنس بن مالك",
+	},
+	{
+		role: "assistant" as const,
+		content: [
+			{
+				type: "tool_use",
+				id: "toolu_ex3",
+				name: "report_narrators",
+				input: {
+					narrators: [
+						{ name: "شعبة", position: 0, mentionStart: 8, mentionEnd: 12 },
+						{ name: "قتادة", position: 1, mentionStart: 16, mentionEnd: 21 },
+						{
+							name: "أنس بن مالك",
+							position: 2,
+							mentionStart: 25,
+							mentionEnd: 36,
+						},
+					],
+				},
+			},
+		],
+	},
+];
 
 const NARRATORS_TOOL = {
 	name: "report_narrators" as const,
@@ -59,7 +144,7 @@ export async function extractNarrators(
 			system: SYSTEM_PROMPT,
 			tools: [NARRATORS_TOOL],
 			tool_choice: { type: "tool", name: "report_narrators" },
-			messages: [{ role: "user", content: isnad }],
+			messages: [...FEW_SHOT, { role: "user", content: isnad }],
 		}),
 	});
 

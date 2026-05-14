@@ -37,7 +37,9 @@
 		"check": "biome check --write ."
 	},
 	"dependencies": {
+		"@dagrejs/dagre": "^3.0.0",
 		"@my-better-t-app/env": "workspace:*",
+		"@xyflow/react": "^12.10.2",
 		"dotenv": "catalog:",
 		"zod": "catalog:"
 	},

@@ -11,7 +11,6 @@ export interface NarratorMatchInput {
 export interface NarratorRecordInput {
 	id: string;
 	reliabilityGrade: string;
-	[key: string]: unknown;
 }
 
 export type MatchState = "auto" | "confirmed" | "unknown" | "flagged";

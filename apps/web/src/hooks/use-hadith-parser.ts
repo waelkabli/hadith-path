@@ -48,7 +48,7 @@ export interface UseHadithParserReturn {
 	result: ParseResult | null;
 	error: string | null;
 	isLoading: boolean;
-	parse: (text: string) => Promise<void>;
+	parse: (text: string) => Promise<ParseResult>;
 	reset: () => void;
 }
 
@@ -75,7 +75,7 @@ export function useHadithParser(): UseHadithParserReturn {
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 
-	const parse = async (text: string): Promise<void> => {
+	const parse = async (text: string): Promise<ParseResult> => {
 		if (!apiKey) {
 			const msg = "يرجى إدخال مفتاح API في الإعدادات";
 			setError(msg);
@@ -97,6 +97,7 @@ export function useHadithParser(): UseHadithParserReturn {
 			};
 			localStorage.setItem(PARSE_RESULT_KEY, JSON.stringify(stored));
 			setResult(newResult);
+			return newResult;
 		} catch {
 			const msg =
 				"فشل الاتصال بالنموذج — يرجى التحقق من المفتاح والمحاولة مجدداً";
