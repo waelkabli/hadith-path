@@ -1,4 +1,5 @@
 import type { NarratorMatch } from "@/lib/match-narrators";
+import type { NarratorRecord } from "@/lib/narrator-database";
 
 interface NarratorChainViewProps {
 	narrators: NarratorMatch[] | null;
@@ -13,6 +14,8 @@ interface NarratorChainViewProps {
 	onSelect?: (position: number) => void;
 	// Phase 2 — guided step-through
 	onStartGuided?: () => void;
+	// Phase 6 — resolve selectedId against live DB (dangling reference detection)
+	records?: NarratorRecord[];
 }
 
 export function NarratorChainView({
@@ -26,6 +29,7 @@ export function NarratorChainView({
 	selectedPosition,
 	onSelect,
 	onStartGuided,
+	records,
 }: NarratorChainViewProps) {
 	if (!isLoading && !error && !narrators && !showReExtract) return null;
 
@@ -217,10 +221,18 @@ export function NarratorChainView({
 					>
 						{narrators.map((narrator) => {
 							const isSelected = narrator.position === selectedPosition;
+							const resolvedRecord =
+								narrator.selectedId && records
+									? records.find((r) => r.id === narrator.selectedId)
+									: undefined;
 							const isConfirmed =
-								narrator.userOverride && narrator.selectedId !== null;
+								narrator.userOverride &&
+								narrator.selectedId !== null &&
+								(!records || resolvedRecord !== undefined);
 							const isUnknown =
-								narrator.userOverride && narrator.selectedId === null;
+								narrator.userOverride &&
+								(narrator.selectedId === null ||
+									(records !== undefined && resolvedRecord === undefined));
 
 							let borderColor: string;
 							let backgroundColor: string;

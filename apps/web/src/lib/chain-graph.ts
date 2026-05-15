@@ -46,7 +46,11 @@ export function buildChainGraph(
 
 		let matchState: MatchState;
 		if (narrator.userOverride) {
-			matchState = narrator.selectedId ? "confirmed" : "unknown";
+			// dangling reference: selectedId points to a deleted record → treat as unknown
+			matchState =
+				narrator.selectedId !== null && record !== null
+					? "confirmed"
+					: "unknown";
 		} else {
 			matchState = narrator.selectedId ? "auto" : "flagged";
 		}

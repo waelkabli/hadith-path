@@ -2,10 +2,7 @@ import { useState } from "react";
 
 import { extractNarrators } from "@/lib/extract-narrators";
 import { matchNarrators, type NarratorMatch } from "@/lib/match-narrators";
-import {
-	getNarratorDatabase,
-	type NarratorRecord,
-} from "@/lib/narrator-database";
+import type { NarratorRecord } from "@/lib/narrator-database";
 import { useApiKey } from "./use-api-key";
 
 const EXTRACTION_KEY = "hadith-narrator-extraction";
@@ -112,17 +109,13 @@ export function useNarratorExtraction(
 		setIsLoading(true);
 		try {
 			const extracted = await extractNarrators(isnadText, apiKey);
-			const matched = matchNarrators(
-				extracted,
-				database ?? getNarratorDatabase(),
-			);
+			const matched = matchNarrators(extracted, database ?? []);
 			const hash = hashText(isnadText);
 			persistExtraction(hash, matched);
 			setNarrators(matched);
 			setExtractedIsnadHash(hash);
 		} catch {
 			setError("فشل استخراج الرواة — يرجى المحاولة مجدداً");
-			// existing narrators state is intentionally preserved on failure
 		} finally {
 			setIsLoading(false);
 		}

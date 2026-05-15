@@ -108,4 +108,105 @@ describe("useCustomNarrators", () => {
 			expect(result.current.customNarrators[0].nameArabic).toBe("راوٍ محفوظ");
 		});
 	});
+
+	describe("update", () => {
+		it("update(id, fields) modifies only the specified fields", () => {
+			const { result } = renderHook(() => useCustomNarrators());
+			let record!: ReturnType<typeof result.current.add>;
+			act(() => {
+				record = result.current.add(BASE_INPUT);
+			});
+
+			act(() => {
+				result.current.update(record.id, { nameArabic: "اسم جديد" });
+			});
+
+			const updated = result.current.customNarrators.find(
+				(r) => r.id === record.id,
+			);
+			expect(updated?.nameArabic).toBe("اسم جديد");
+			// Other fields unchanged
+			expect(updated?.nameTransliterated).toBe(BASE_INPUT.nameTransliterated);
+			expect(updated?.reliabilityGrade).toBe(BASE_INPUT.reliabilityGrade);
+		});
+
+		it("update(id, fields) persists to localStorage", () => {
+			const { result } = renderHook(() => useCustomNarrators());
+			let record!: ReturnType<typeof result.current.add>;
+			act(() => {
+				record = result.current.add(BASE_INPUT);
+			});
+
+			act(() => {
+				result.current.update(record.id, { deathYear: 99 });
+			});
+
+			const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+			const persisted = stored.find((r: { id: string }) => r.id === record.id);
+			expect(persisted?.deathYear).toBe(99);
+		});
+
+		it("update with a non-existent ID is a no-op", () => {
+			const { result } = renderHook(() => useCustomNarrators());
+			act(() => {
+				result.current.add(BASE_INPUT);
+			});
+			const before = result.current.customNarrators.length;
+
+			act(() => {
+				result.current.update("non-existent-id", { nameArabic: "شيء" });
+			});
+
+			expect(result.current.customNarrators.length).toBe(before);
+		});
+	});
+
+	describe("remove", () => {
+		it("remove(id) removes the record from customNarrators", () => {
+			const { result } = renderHook(() => useCustomNarrators());
+			let record!: ReturnType<typeof result.current.add>;
+			act(() => {
+				record = result.current.add(BASE_INPUT);
+			});
+			expect(result.current.customNarrators).toHaveLength(1);
+
+			act(() => {
+				result.current.remove(record.id);
+			});
+
+			expect(result.current.customNarrators).toHaveLength(0);
+		});
+
+		it("remove(id) persists to localStorage — subsequent reads do not include the record", () => {
+			const { result } = renderHook(() => useCustomNarrators());
+			let record!: ReturnType<typeof result.current.add>;
+			act(() => {
+				record = result.current.add(BASE_INPUT);
+			});
+
+			act(() => {
+				result.current.remove(record.id);
+			});
+
+			const stored = JSON.parse(
+				localStorage.getItem(STORAGE_KEY) ?? "null",
+			) as { id: string }[];
+			expect(Array.isArray(stored)).toBe(true);
+			expect(stored.find((r) => r.id === record.id)).toBeUndefined();
+		});
+
+		it("remove with a non-existent ID is a no-op", () => {
+			const { result } = renderHook(() => useCustomNarrators());
+			act(() => {
+				result.current.add(BASE_INPUT);
+			});
+			const before = result.current.customNarrators.length;
+
+			act(() => {
+				result.current.remove("non-existent-id");
+			});
+
+			expect(result.current.customNarrators.length).toBe(before);
+		});
+	});
 });

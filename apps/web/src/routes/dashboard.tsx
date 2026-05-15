@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { DebugPanel } from "@/components/debug-panel";
 import { HadithInput } from "@/components/hadith-input";
@@ -10,18 +10,14 @@ import { NarratorChainView } from "@/components/narrator-chain-view";
 import { NarratorDisambiguationPanel } from "@/components/narrator-disambiguation-panel";
 import { useCustomNarrators } from "@/hooks/use-custom-narrators";
 import { useHadithParser } from "@/hooks/use-hadith-parser";
+import { useNarratorDatabase } from "@/hooks/use-narrator-database";
 import { useNarratorExtraction } from "@/hooks/use-narrator-extraction";
 import type { NarratorRecord } from "@/lib/narrator-database";
-import { getNarratorDatabase } from "@/lib/narrator-database";
 
 export const Route = createFileRoute("/dashboard")({
 	component: RouteComponent,
 });
 
-const narratorDatabase = getNarratorDatabase();
-
-// Discriminated union so "no selection", "unknown narrator", and "identified
-// narrator" are all distinct — avoids null-as-sentinel ambiguity.
 type BioPanelState =
 	| { type: "closed" }
 	| { type: "unknown" }
@@ -42,21 +38,13 @@ function RouteComponent() {
 		: undefined;
 
 	const extractor = useNarratorExtraction(currentIsnad);
+	const { records: allRecords, error: dbError } = useNarratorDatabase();
 
 	const [bioPanel, setBioPanel] = useState<BioPanelState>({ type: "closed" });
-
-	// Phase 1 — disambiguation panel state
 	const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
-
-	// Phase 2 — guided step-through state
 	const [isInGuidedMode, setIsInGuidedMode] = useState(false);
 
-	// Phase 3 — custom narrators + merged record list
 	const customNarrators = useCustomNarrators();
-	const allRecords = useMemo(
-		() => [...narratorDatabase, ...customNarrators.customNarrators],
-		[customNarrators.customNarrators],
-	);
 
 	const selectedRecord =
 		bioPanel.type === "record"
@@ -66,7 +54,6 @@ function RouteComponent() {
 	const showReExtract =
 		(parser.result?.corrected ?? false) && extractor.isStale;
 
-	// Phase 2 — flagged (unresolved) narrators for guided mode
 	const flaggedNarrators =
 		extractor.narrators?.filter(
 			(n) => !n.userOverride && (n.confidence === "low" || n.isAmbiguous),
@@ -129,12 +116,41 @@ function RouteComponent() {
 							splitAt={parser.result.splitAt}
 						/>
 					)}
+
+					{/* DB load error banner */}
+					{dbError && (
+						<div
+							style={{
+								borderTop: "1px solid var(--color-border-subtle)",
+								padding: "var(--space-3) var(--space-5)",
+								background: "#fef9c3",
+								direction: "rtl",
+								display: "flex",
+								alignItems: "center",
+								gap: "var(--space-3)",
+							}}
+						>
+							<span
+								style={{
+									fontFamily: "var(--font-ui-arabic)",
+									fontSize: "var(--text-sm)",
+									color: "#92400e",
+									flex: 1,
+								}}
+							>
+								تعذّر تحميل قاعدة بيانات الرواة — المطابقة تعمل على السجلات
+								المخصصة فقط
+							</span>
+						</div>
+					)}
+
 					<NarratorChainView
 						narrators={extractor.narrators}
 						isLoading={extractor.isLoading}
 						error={extractor.error}
 						isStale={extractor.isStale}
 						showReExtract={showReExtract}
+						records={allRecords}
 						onRetry={() =>
 							extractor.extract(
 								submittedText.slice(0, parser.result?.splitAt ?? 0),
@@ -151,7 +167,6 @@ function RouteComponent() {
 						}}
 					/>
 
-					{/* Phase 1 — disambiguation panel */}
 					{selectedPosition !== null &&
 						extractor.narrators &&
 						(() => {
