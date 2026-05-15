@@ -9,12 +9,17 @@ Rules:
 4. mentionStart and mentionEnd are Unicode code-unit offsets in the isnad string (mentionEnd is exclusive).
 5. Return narrators sorted ascending by position.`;
 
-const FEW_SHOT = [
-	// Example 1: simple chain with عن
+// Few-shot examples follow the required API turn structure:
+//   user → assistant(tool_use) → user([tool_result, next_text]) → ...
+// The last assistant tool_use is in FEW_SHOT_TAIL; the actual isnad is
+// appended as a tool_result+text block in the final user message at call time.
+const FEW_SHOT_HEAD = [
+	// Example 1 input
 	{
 		role: "user" as const,
 		content: "مالك عن نافع عن ابن عمر",
 	},
+	// Example 1 output
 	{
 		role: "assistant" as const,
 		content: [
@@ -32,11 +37,15 @@ const FEW_SHOT = [
 			},
 		],
 	},
-	// Example 2: chain beginning with حدثنا / أخبرنا
+	// tool_result for ex1 + example 2 input (must be one user message)
 	{
 		role: "user" as const,
-		content: "حدثنا يحيى بن سعيد قال أخبرنا مالك عن نافع",
+		content: [
+			{ type: "tool_result", tool_use_id: "toolu_ex1", content: "ok" },
+			{ type: "text", text: "حدثنا يحيى بن سعيد قال أخبرنا مالك عن نافع" },
+		],
 	},
+	// Example 2 output
 	{
 		role: "assistant" as const,
 		content: [
@@ -59,11 +68,15 @@ const FEW_SHOT = [
 			},
 		],
 	},
-	// Example 3: chain ending with a Companion narrator
+	// tool_result for ex2 + example 3 input (must be one user message)
 	{
 		role: "user" as const,
-		content: "أخبرنا شعبة عن قتادة عن أنس بن مالك",
+		content: [
+			{ type: "tool_result", tool_use_id: "toolu_ex2", content: "ok" },
+			{ type: "text", text: "أخبرنا شعبة عن قتادة عن أنس بن مالك" },
+		],
 	},
+	// Example 3 output
 	{
 		role: "assistant" as const,
 		content: [
@@ -130,6 +143,16 @@ export async function extractNarrators(
 	isnad: string,
 	apiKey: string,
 ): Promise<ExtractedNarrator[]> {
+	// The final user message combines the tool_result for ex3 with the actual isnad,
+	// keeping alternating user/assistant turns valid.
+	const finalUserMessage = {
+		role: "user" as const,
+		content: [
+			{ type: "tool_result", tool_use_id: "toolu_ex3", content: "ok" },
+			{ type: "text", text: isnad },
+		],
+	};
+
 	const response = await fetch(CLAUDE_API_URL, {
 		method: "POST",
 		headers: {
@@ -144,7 +167,7 @@ export async function extractNarrators(
 			system: SYSTEM_PROMPT,
 			tools: [NARRATORS_TOOL],
 			tool_choice: { type: "tool", name: "report_narrators" },
-			messages: [...FEW_SHOT, { role: "user", content: isnad }],
+			messages: [...FEW_SHOT_HEAD, finalUserMessage],
 		}),
 	});
 
