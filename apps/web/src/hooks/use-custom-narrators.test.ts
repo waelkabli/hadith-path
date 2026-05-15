@@ -1,48 +1,111 @@
-import { describe, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { act, renderHook } from "@testing-library/react";
 
-// Tests for useCustomNarrators hook (apps/web/src/hooks/use-custom-narrators.ts)
-// Requires React testing infrastructure (@testing-library/react + jsdom).
+import { useCustomNarrators } from "@/hooks/use-custom-narrators";
+
+const STORAGE_KEY = "hadith-custom-narrators";
+
+const BASE_INPUT = {
+	nameArabic: "عبد الله بن زيد",
+	nameTransliterated: "Abd Allah ibn Zayd",
+	birthYear: null,
+	deathYear: 65,
+	generation: "Tabi'i" as const,
+	reliabilityGrade: "ثقة",
+	bioNote: "A test narrator",
+};
+
+beforeEach(() => {
+	localStorage.clear();
+});
+
+afterEach(() => {
+	localStorage.clear();
+});
 
 describe("useCustomNarrators", () => {
 	describe("add", () => {
-		it.todo(
-			"add() generates a custom- prefixed ID and appends the record to hadith-custom-narrators in localStorage",
-		);
-		it.todo("add() returns the full NarratorRecord including the generated ID");
-		it.todo(
-			"add() fills teachers, students, and collections with empty arrays when not provided",
-		);
-		it.todo(
-			"calling add() twice results in two records with distinct IDs in localStorage",
-		);
-	});
+		it("add() generates a custom- prefixed ID", () => {
+			const { result } = renderHook(() => useCustomNarrators());
+			let record!: ReturnType<typeof result.current.add>;
+			act(() => {
+				record = result.current.add(BASE_INPUT);
+			});
+			expect(record.id).toMatch(/^custom-/);
+		});
 
-	describe("update", () => {
-		it.todo(
-			"update(id, fields) modifies only the specified fields and leaves all other fields unchanged",
-		);
-		it.todo(
-			"update() persists the change to hadith-custom-narrators in localStorage immediately",
-		);
-		it.todo("update() with a non-existent ID is a no-op");
-	});
+		it("the new record is in customNarrators after add()", () => {
+			const { result } = renderHook(() => useCustomNarrators());
+			act(() => {
+				result.current.add(BASE_INPUT);
+			});
+			expect(result.current.customNarrators).toHaveLength(1);
+			expect(result.current.customNarrators[0].nameArabic).toBe(
+				BASE_INPUT.nameArabic,
+			);
+		});
 
-	describe("remove", () => {
-		it.todo(
-			"remove(id) deletes the record from hadith-custom-narrators in localStorage",
-		);
-		it.todo("remove() with a non-existent ID is a no-op and does not throw");
-		it.todo(
-			"after remove(), the deleted record no longer appears in customNarrators",
-		);
-	});
+		it("the record is written to hadith-custom-narrators in localStorage with all fields", () => {
+			const { result } = renderHook(() => useCustomNarrators());
+			let record!: ReturnType<typeof result.current.add>;
+			act(() => {
+				record = result.current.add(BASE_INPUT);
+			});
+			const raw = localStorage.getItem(STORAGE_KEY);
+			expect(raw).not.toBeNull();
+			const stored = JSON.parse(raw ?? "null");
+			expect(Array.isArray(stored)).toBe(true);
+			expect(stored).toHaveLength(1);
+			expect(stored[0].id).toBe(record.id);
+			expect(stored[0].nameArabic).toBe(BASE_INPUT.nameArabic);
+			expect(stored[0].teachers).toEqual([]);
+			expect(stored[0].students).toEqual([]);
+			expect(stored[0].collections).toEqual([]);
+		});
 
-	describe("persistence", () => {
-		it.todo(
-			"customNarrators is populated from hadith-custom-narrators in localStorage on mount",
-		);
-		it.todo(
-			"records added in a previous session are present after a simulated page reload",
-		);
+		it("adding a second record appends without overwriting the first", () => {
+			const { result } = renderHook(() => useCustomNarrators());
+			let first!: ReturnType<typeof result.current.add>;
+			let second!: ReturnType<typeof result.current.add>;
+			act(() => {
+				first = result.current.add(BASE_INPUT);
+			});
+			act(() => {
+				second = result.current.add({
+					...BASE_INPUT,
+					nameArabic: "محمد بن علي",
+					nameTransliterated: "Muhammad ibn Ali",
+				});
+			});
+			expect(result.current.customNarrators).toHaveLength(2);
+			expect(first.id).not.toBe(second.id);
+			const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+			expect(stored).toHaveLength(2);
+		});
+
+		it("on mount, reads from localStorage (simulated reload)", () => {
+			// Pre-seed localStorage with a narrator record
+			const seeded = [
+				{
+					id: "custom-seeded-abc",
+					nameArabic: "راوٍ محفوظ",
+					nameTransliterated: "Preserved Narrator",
+					birthYear: null,
+					deathYear: null,
+					generation: "later",
+					reliabilityGrade: "ثقة",
+					teachers: [],
+					students: [],
+					collections: [],
+					bioNote: "",
+				},
+			];
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+
+			const { result } = renderHook(() => useCustomNarrators());
+			expect(result.current.customNarrators).toHaveLength(1);
+			expect(result.current.customNarrators[0].id).toBe("custom-seeded-abc");
+			expect(result.current.customNarrators[0].nameArabic).toBe("راوٍ محفوظ");
+		});
 	});
 });

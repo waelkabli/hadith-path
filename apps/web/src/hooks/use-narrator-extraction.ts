@@ -2,7 +2,10 @@ import { useState } from "react";
 
 import { extractNarrators } from "@/lib/extract-narrators";
 import { matchNarrators, type NarratorMatch } from "@/lib/match-narrators";
-import { getNarratorDatabase } from "@/lib/narrator-database";
+import {
+	getNarratorDatabase,
+	type NarratorRecord,
+} from "@/lib/narrator-database";
 import { useApiKey } from "./use-api-key";
 
 const EXTRACTION_KEY = "hadith-narrator-extraction";
@@ -64,7 +67,7 @@ export interface UseNarratorExtractionReturn {
 	error: string | null;
 	isLoading: boolean;
 	isStale: boolean;
-	extract: (isnadText: string) => Promise<void>;
+	extract: (isnadText: string, database?: NarratorRecord[]) => Promise<void>;
 	confirmMatch: (position: number, narratorId: string | null) => void;
 	reset: () => void;
 }
@@ -96,7 +99,10 @@ export function useNarratorExtraction(
 		currentIsnadText !== "" &&
 		hashText(currentIsnadText) !== extractedIsnadHash;
 
-	const extract = async (isnadText: string): Promise<void> => {
+	const extract = async (
+		isnadText: string,
+		database?: NarratorRecord[],
+	): Promise<void> => {
 		if (!apiKey) {
 			setError("يرجى إدخال مفتاح API في الإعدادات");
 			return;
@@ -106,7 +112,10 @@ export function useNarratorExtraction(
 		setIsLoading(true);
 		try {
 			const extracted = await extractNarrators(isnadText, apiKey);
-			const matched = matchNarrators(extracted, getNarratorDatabase());
+			const matched = matchNarrators(
+				extracted,
+				database ?? getNarratorDatabase(),
+			);
 			const hash = hashText(isnadText);
 			persistExtraction(hash, matched);
 			setNarrators(matched);

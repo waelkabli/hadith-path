@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { DebugPanel } from "@/components/debug-panel";
 import { HadithInput } from "@/components/hadith-input";
@@ -7,8 +7,11 @@ import { HadithSplitView } from "@/components/hadith-split-view";
 import { IsnadChainView } from "@/components/isnad-chain-view";
 import { NarratorBioCard } from "@/components/narrator-bio-card";
 import { NarratorChainView } from "@/components/narrator-chain-view";
+import { NarratorDisambiguationPanel } from "@/components/narrator-disambiguation-panel";
+import { useCustomNarrators } from "@/hooks/use-custom-narrators";
 import { useHadithParser } from "@/hooks/use-hadith-parser";
 import { useNarratorExtraction } from "@/hooks/use-narrator-extraction";
+import type { NarratorRecord } from "@/lib/narrator-database";
 import { getNarratorDatabase } from "@/lib/narrator-database";
 
 export const Route = createFileRoute("/dashboard")({
@@ -42,19 +45,38 @@ function RouteComponent() {
 
 	const [bioPanel, setBioPanel] = useState<BioPanelState>({ type: "closed" });
 
+	// Phase 1 — disambiguation panel state
+	const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
+
+	// Phase 2 — guided step-through state
+	const [isInGuidedMode, setIsInGuidedMode] = useState(false);
+
+	// Phase 3 — custom narrators + merged record list
+	const customNarrators = useCustomNarrators();
+	const allRecords = useMemo(
+		() => [...narratorDatabase, ...customNarrators.customNarrators],
+		[customNarrators.customNarrators],
+	);
+
 	const selectedRecord =
 		bioPanel.type === "record"
-			? (narratorDatabase.find((r) => r.id === bioPanel.id) ?? null)
+			? (allRecords.find((r) => r.id === bioPanel.id) ?? null)
 			: null;
 
 	const showReExtract =
 		(parser.result?.corrected ?? false) && extractor.isStale;
 
+	// Phase 2 — flagged (unresolved) narrators for guided mode
+	const flaggedNarrators =
+		extractor.narrators?.filter(
+			(n) => !n.userOverride && (n.confidence === "low" || n.isAmbiguous),
+		) ?? [];
+
 	const handleSubmit = async (text: string) => {
 		setSubmittedText(text);
 		const result = await parser.parse(text);
 		const isnad = text.slice(0, result.splitAt);
-		await extractor.extract(isnad);
+		await extractor.extract(isnad, allRecords);
 	};
 
 	const handleReset = useCallback(() => {
@@ -73,8 +95,8 @@ function RouteComponent() {
 		}
 		extractor.reset();
 		const isnad = submittedText.slice(0, parser.result?.splitAt ?? 0);
-		await extractor.extract(isnad);
-	}, [extractor, submittedText, parser.result]);
+		await extractor.extract(isnad, allRecords);
+	}, [extractor, submittedText, parser.result, allRecords]);
 
 	return (
 		<>
@@ -116,10 +138,103 @@ function RouteComponent() {
 						onRetry={() =>
 							extractor.extract(
 								submittedText.slice(0, parser.result?.splitAt ?? 0),
+								allRecords,
 							)
 						}
 						onReExtract={handleReExtract}
+						selectedPosition={selectedPosition}
+						onSelect={setSelectedPosition}
+						onStartGuided={() => {
+							if (flaggedNarrators.length === 0) return;
+							setIsInGuidedMode(true);
+							setSelectedPosition(flaggedNarrators[0].position);
+						}}
 					/>
+
+					{/* Phase 1 — disambiguation panel */}
+					{selectedPosition !== null &&
+						extractor.narrators &&
+						(() => {
+							const nm = extractor.narrators.find(
+								(n) => n.position === selectedPosition,
+							);
+							if (!nm) return null;
+							const candidateRecords = nm.topMatches
+								.map((m) => allRecords.find((r) => r.id === m.narratorId))
+								.filter((r): r is NarratorRecord => r != null);
+							return (
+								<NarratorDisambiguationPanel
+									narratorMatch={nm}
+									candidateRecords={candidateRecords}
+									onConfirm={(narratorId) => {
+										extractor.confirmMatch(selectedPosition, narratorId);
+										if (isInGuidedMode) {
+											const remaining = flaggedNarrators.filter(
+												(n) => n.position !== selectedPosition,
+											);
+											const next = remaining.find(
+												(n) => n.position > selectedPosition,
+											);
+											if (!next) {
+												setIsInGuidedMode(false);
+												setSelectedPosition(null);
+											} else {
+												setSelectedPosition(next.position);
+											}
+										} else {
+											setSelectedPosition(null);
+										}
+									}}
+									onAddCustom={(data) => {
+										const newRecord = customNarrators.add(data);
+										extractor.confirmMatch(selectedPosition, newRecord.id);
+										setIsInGuidedMode(false);
+										setSelectedPosition(null);
+									}}
+									onClose={() => {
+										setIsInGuidedMode(false);
+										setSelectedPosition(null);
+									}}
+									isGuided={isInGuidedMode}
+									hasPrevious={
+										isInGuidedMode &&
+										flaggedNarrators.some(
+											(n) =>
+												n.position <
+												(selectedPosition ?? Number.POSITIVE_INFINITY),
+										)
+									}
+									hasNext={
+										isInGuidedMode &&
+										flaggedNarrators
+											.filter((n) => n.position !== selectedPosition)
+											.some((n) => n.position > (selectedPosition ?? -1))
+									}
+									onPrevious={() => {
+										const prev = [...flaggedNarrators]
+											.reverse()
+											.find(
+												(n) =>
+													n.position <
+													(selectedPosition ?? Number.POSITIVE_INFINITY),
+											);
+										if (prev) setSelectedPosition(prev.position);
+									}}
+									onNext={() => {
+										const next = flaggedNarrators.find(
+											(n) => n.position > (selectedPosition ?? -1),
+										);
+										if (!next) {
+											setIsInGuidedMode(false);
+											setSelectedPosition(null);
+										} else {
+											setSelectedPosition(next.position);
+										}
+									}}
+								/>
+							);
+						})()}
+
 					{extractor.narrators && extractor.narrators.length > 0 && (
 						<div
 							style={{
@@ -131,7 +246,7 @@ function RouteComponent() {
 							<div style={{ flex: 1, minWidth: 0 }}>
 								<IsnadChainView
 									narrators={extractor.narrators}
-									records={narratorDatabase}
+									records={allRecords}
 									onNodeClick={(recordId) =>
 										setBioPanel(
 											recordId === null
@@ -144,7 +259,7 @@ function RouteComponent() {
 							{bioPanel.type !== "closed" && (
 								<NarratorBioCard
 									record={selectedRecord}
-									allRecords={narratorDatabase}
+									allRecords={allRecords}
 									onClose={() => setBioPanel({ type: "closed" })}
 								/>
 							)}
