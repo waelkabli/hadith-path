@@ -1,111 +1,73 @@
-# my-better-t-app
+# Hadith Path
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, ORPC, and more.
+Isnad chain analyzer — paste a hadith, and the app separates the isnad from the matn, extracts every narrator in order, and visualizes the transmission chain as an interactive graph.
 
-## Features
+## What it does
 
-- **TypeScript** - For type safety and improved developer experience
-- **TanStack Router** - File-based routing with full type safety
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **Hono** - Lightweight, performant server framework
-- **oRPC** - End-to-end type-safe APIs with OpenAPI integration
-- **Bun** - Runtime environment
-- **Drizzle** - TypeScript-first ORM
-- **SQLite/Turso** - Database engine
-- **Authentication** - Better-Auth
-- **Biome** - Linting and formatting
-- **Turborepo** - Optimized monorepo build system
+1. **Text normalization** — cleans and normalizes Arabic input (diacritics, Unicode variants)
+2. **Isnad / matn separation** — splits the chain of transmission from the hadith body using Claude AI
+3. **Narrator extraction** — identifies each narrator name and their position in the chain
+4. **Chain visualization** — renders the isnad as a directed graph with narrator bio cards
 
-## Getting Started
+The app runs entirely in the browser. Your Anthropic API key is stored locally and never sent anywhere except the Anthropic API directly.
 
-First, install the dependencies:
+## Tech stack
+
+- **React + TanStack Router** — frontend, file-based routing
+- **Hono + oRPC** — backend API with end-to-end type safety
+- **Drizzle + SQLite/Turso** — database
+- **Better-Auth** — authentication
+- **Turborepo + Bun** — monorepo build system
+- **Biome** — linting and formatting
+
+## Getting started
 
 ```bash
 bun install
 ```
 
-## Database Setup
-
-This project uses SQLite with Drizzle ORM.
-
-1. Start the local SQLite database (optional):
+Copy the env file and fill in your credentials:
 
 ```bash
-bun run db:local
+cp apps/server/.env.example apps/server/.env
 ```
 
-2. Update your `.env` file in the `apps/server` directory with the appropriate connection details if needed.
-
-3. Apply the schema to your database:
+Push the database schema:
 
 ```bash
 bun run db:push
 ```
 
-Then, run the development server:
+Start the dev server:
 
 ```bash
 bun run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:5173](http://localhost:5173). Add your Anthropic API key in the settings panel to enable AI features.
 
-## UI Customization
-
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
-
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
-
-### Add more shared components
-
-Run this from the project root to add more primitives to the shared UI package:
-
-```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
-```
-
-Import shared components like this:
-
-```tsx
-import { Button } from "@my-better-t-app/ui/components/button";
-```
-
-### Add app-specific blocks
-
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
-
-## Git Hooks and Formatting
-
-- Format and lint fix: `bun run check`
-
-## Project Structure
+## Project structure
 
 ```
-my-better-t-app/
+hadith-path/
 ├── apps/
-│   ├── web/         # Frontend application (React + TanStack Router)
-│   └── server/      # Backend API (Hono, ORPC)
-├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── api/         # API layer / business logic
-│   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
+│   ├── web/        # React frontend (TanStack Router)
+│   └── server/     # Hono + oRPC API
+└── packages/
+    ├── ui/         # Shared shadcn/ui components
+    ├── api/        # API layer and routers
+    ├── auth/       # Authentication config
+    └── db/         # Drizzle schema and migrations
 ```
 
-## Available Scripts
+## Scripts
 
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:server`: Start only the server
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run db:push`: Push schema changes to database
-- `bun run db:generate`: Generate database client/types
-- `bun run db:migrate`: Run database migrations
-- `bun run db:studio`: Open database studio UI
-- `bun run db:local`: Start the local SQLite database
-- `bun run check`: Run Biome formatting and linting
+| Command | Description |
+|---|---|
+| `bun run dev` | Start all apps in dev mode |
+| `bun run build` | Build all apps |
+| `bun run check-types` | TypeScript check across all packages |
+| `bun run test` | Run all tests |
+| `bun run check` | Biome lint + format fix |
+| `bun run db:push` | Push schema to database |
+| `bun run db:studio` | Open Drizzle Studio |
