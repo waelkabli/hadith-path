@@ -1,13 +1,16 @@
 # Hadith Path
 
-Isnad chain analyzer — paste a hadith, and the app separates the isnad from the matn, extracts every narrator in order, and visualizes the transmission chain as an interactive graph.
+Isnad chain analyzer — paste a hadith, and the app separates the isnad from the matn, extracts every narrator in order, matches them against a biographical database, and visualizes the transmission chain as an interactive RTL graph.
 
 ## What it does
 
-1. **Text normalization** — cleans and normalizes Arabic input (diacritics, Unicode variants)
-2. **Isnad / matn separation** — splits the chain of transmission from the hadith body using Claude AI
-3. **Narrator extraction** — identifies each narrator name and their position in the chain
-4. **Chain visualization** — renders the isnad as a directed graph with narrator bio cards
+1. **Text normalization** — cleans Arabic input, strips diacritics, normalizes Unicode variants before any processing
+2. **Isnad / matn separation** — uses Claude AI to split the chain of transmission from the hadith body; the split point can be manually adjusted
+3. **Narrator extraction** — identifies each narrator name and their position in the chain using Claude AI
+4. **Narrator disambiguation** — matches extracted names against the narrator database with trigram similarity scoring; low-confidence and ambiguous matches are flagged for manual review with a guided step-through flow
+5. **Narrator database** — bundled biographical database of classical hadith narrators with Arabic names, transliteration, dates, generation, reliability grades, teacher/student relationships, and source collections; supports custom narrator entries
+6. **Isnad chain visualization** — renders the chain as a right-to-left reactflow graph; each node shows the narrator's name and reliability grade; clicking a node opens a read-only biography panel
+7. **Multi-variant comparison** — load up to five versions of the same hadith and overlay their chains; narrators shared across versions merge into a single node, divergences branch visually; edges are color-coded per variant with a legend
 
 The app runs entirely in the browser. Your Anthropic API key is stored locally and never sent anywhere except the Anthropic API directly.
 
@@ -17,6 +20,7 @@ The app runs entirely in the browser. Your Anthropic API key is stored locally a
 - **Hono + oRPC** — backend API with end-to-end type safety
 - **Drizzle + SQLite/Turso** — database
 - **Better-Auth** — authentication
+- **reactflow + dagre** — interactive chain graph with RTL layout
 - **Turborepo + Bun** — monorepo build system
 - **Biome** — linting and formatting
 
@@ -54,7 +58,7 @@ hadith-path/
 │   ├── web/        # React frontend (TanStack Router)
 │   └── server/     # Hono + oRPC API
 └── packages/
-    ├── ui/         # Shared shadcn/ui components
+    ├── ui/         # Shared components
     ├── api/        # API layer and routers
     ├── auth/       # Authentication config
     └── db/         # Drizzle schema and migrations
