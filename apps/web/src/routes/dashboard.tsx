@@ -8,10 +8,13 @@ import { IsnadChainView } from "@/components/isnad-chain-view";
 import { NarratorBioCard } from "@/components/narrator-bio-card";
 import { NarratorChainView } from "@/components/narrator-chain-view";
 import { NarratorDisambiguationPanel } from "@/components/narrator-disambiguation-panel";
+import { VariantChainView } from "@/components/variant-chain-view";
+import { VariantInputPanel } from "@/components/variant-input-panel";
 import { useCustomNarrators } from "@/hooks/use-custom-narrators";
 import { useHadithParser } from "@/hooks/use-hadith-parser";
 import { useNarratorDatabase } from "@/hooks/use-narrator-database";
 import { useNarratorExtraction } from "@/hooks/use-narrator-extraction";
+import { useVariants, type Variant } from "@/hooks/use-variants";
 import type { NarratorRecord } from "@/lib/narrator-database";
 
 export const Route = createFileRoute("/dashboard")({
@@ -45,6 +48,8 @@ function RouteComponent() {
 	const [isInGuidedMode, setIsInGuidedMode] = useState(false);
 
 	const customNarrators = useCustomNarrators();
+	const { variants, canAddMore, addVariant, removeVariant, updateVariant } =
+		useVariants();
 
 	const selectedRecord =
 		bioPanel.type === "record"
@@ -69,7 +74,8 @@ function RouteComponent() {
 	const handleReset = useCallback(() => {
 		parser.reset();
 		extractor.reset();
-	}, [parser, extractor]);
+		for (const v of variants.slice(1)) removeVariant(v.id);
+	}, [parser, extractor, variants, removeVariant]);
 
 	const handleReExtract = useCallback(async () => {
 		const hasUserOverrides =
@@ -250,36 +256,99 @@ function RouteComponent() {
 							);
 						})()}
 
-					{extractor.narrators && extractor.narrators.length > 0 && (
-						<div
-							style={{
-								borderTop: "1px solid var(--color-border-subtle)",
-								display: "flex",
-								direction: "ltr",
-							}}
-						>
-							<div style={{ flex: 1, minWidth: 0 }}>
-								<IsnadChainView
-									narrators={extractor.narrators}
-									records={allRecords}
-									onNodeClick={(recordId) =>
-										setBioPanel(
-											recordId === null
-												? { type: "unknown" }
-												: { type: "record", id: recordId },
-										)
-									}
-								/>
+					{/* Add variant button */}
+					{parser.result !== null &&
+						extractor.narrators !== null &&
+						extractor.narrators.length > 0 &&
+						canAddMore && (
+							<div
+								style={{
+									borderTop: "1px solid var(--color-border-subtle)",
+									padding: "var(--space-3) var(--space-5)",
+									display: "flex",
+									justifyContent: "flex-end",
+									direction: "rtl",
+								}}
+							>
+								<button
+									type="button"
+									className="btn-secondary btn-sm"
+									onClick={addVariant}
+									style={{
+										fontFamily: "var(--font-ui-arabic)",
+										fontSize: "var(--text-sm)",
+									}}
+								>
+									+ إضافة نسخة
+								</button>
 							</div>
-							{bioPanel.type !== "closed" && (
-								<NarratorBioCard
-									record={selectedRecord}
-									allRecords={allRecords}
-									onClose={() => setBioPanel({ type: "closed" })}
-								/>
-							)}
-						</div>
-					)}
+						)}
+
+					{/* Additional variant input panels */}
+					{variants.slice(1).map((variant) => (
+						<VariantInputPanel
+							key={variant.id}
+							variant={variant}
+							allRecords={allRecords}
+							onUpdate={(data) => updateVariant(variant.id, data)}
+							onRemove={() => removeVariant(variant.id)}
+						/>
+					))}
+
+					{/* Chain visualization */}
+					{extractor.narrators &&
+						extractor.narrators.length > 0 &&
+						(() => {
+							const primaryAsVariant: Variant | null =
+								extractor.narrators && extractor.narrators.length > 0
+									? { ...variants[0], narrators: extractor.narrators }
+									: null;
+							const additionalWithNarrators = variants
+								.slice(1)
+								.filter((v) => v.narrators && v.narrators.length > 0);
+							const variantsForGraph = [
+								...(primaryAsVariant ? [primaryAsVariant] : []),
+								...additionalWithNarrators,
+							];
+							const handleNodeClick = (recordId: string | null) =>
+								setBioPanel(
+									recordId === null
+										? { type: "unknown" }
+										: { type: "record", id: recordId },
+								);
+							return (
+								<div
+									style={{
+										borderTop: "1px solid var(--color-border-subtle)",
+										display: "flex",
+										direction: "ltr",
+									}}
+								>
+									<div style={{ flex: 1, minWidth: 0 }}>
+										{variantsForGraph.length >= 2 ? (
+											<VariantChainView
+												variants={variantsForGraph}
+												records={allRecords}
+												onNodeClick={handleNodeClick}
+											/>
+										) : (
+											<IsnadChainView
+												narrators={extractor.narrators}
+												records={allRecords}
+												onNodeClick={handleNodeClick}
+											/>
+										)}
+									</div>
+									{bioPanel.type !== "closed" && (
+										<NarratorBioCard
+											record={selectedRecord}
+											allRecords={allRecords}
+											onClose={() => setBioPanel({ type: "closed" })}
+										/>
+									)}
+								</div>
+							);
+						})()}
 				</div>
 			</div>
 			<DebugPanel />
