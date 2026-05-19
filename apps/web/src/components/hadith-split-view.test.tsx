@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { HadithSplitView } from "@/components/hadith-split-view";
 
@@ -45,5 +46,57 @@ describe("HadithSplitView", () => {
 		render(<HadithSplitView text={TEXT} splitAt={11} />);
 		expect(screen.queryByText("حدثنا مالك ")).toBeNull();
 		expect(screen.getByText("حدثنا مالك")).toBeDefined();
+	});
+
+	describe("edit split button (F3)", () => {
+		it("shows the edit button when onEditSplit is provided", () => {
+			render(
+				<HadithSplitView
+					text={TEXT}
+					splitAt={SPLIT_AT}
+					onEditSplit={mock(() => {})}
+				/>,
+			);
+			expect(screen.getByText("تعديل نقطة الفصل")).toBeDefined();
+		});
+
+		it("does not show the edit button when onEditSplit is omitted", () => {
+			render(<HadithSplitView text={TEXT} splitAt={SPLIT_AT} />);
+			expect(screen.queryByText("تعديل نقطة الفصل")).toBeNull();
+		});
+
+		it("calls onEditSplit when the edit button is clicked", async () => {
+			const onEditSplit = mock(() => {});
+			render(
+				<HadithSplitView
+					text={TEXT}
+					splitAt={SPLIT_AT}
+					onEditSplit={onEditSplit}
+				/>,
+			);
+			await userEvent.click(screen.getByText("تعديل نقطة الفصل"));
+			expect(onEditSplit).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe("corrected badge (F3)", () => {
+		it("shows the badge when corrected is true", () => {
+			render(
+				<HadithSplitView text={TEXT} splitAt={SPLIT_AT} corrected={true} />,
+			);
+			expect(screen.getByText("تم التعديل يدوياً")).toBeDefined();
+		});
+
+		it("does not show the badge when corrected is false", () => {
+			render(
+				<HadithSplitView text={TEXT} splitAt={SPLIT_AT} corrected={false} />,
+			);
+			expect(screen.queryByText("تم التعديل يدوياً")).toBeNull();
+		});
+
+		it("does not show the badge when corrected is omitted", () => {
+			render(<HadithSplitView text={TEXT} splitAt={SPLIT_AT} />);
+			expect(screen.queryByText("تم التعديل يدوياً")).toBeNull();
+		});
 	});
 });

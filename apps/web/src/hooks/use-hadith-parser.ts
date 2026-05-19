@@ -50,6 +50,7 @@ export interface UseHadithParserReturn {
 	isLoading: boolean;
 	parse: (text: string) => Promise<ParseResult>;
 	reset: () => void;
+	applyCorrection: (splitAt: number) => void;
 }
 
 export function useHadithParser(): UseHadithParserReturn {
@@ -118,5 +119,11 @@ export function useHadithParser(): UseHadithParserReturn {
 		}
 	};
 
-	return { result, error, isLoading, parse, reset };
+	const applyCorrection = (newSplitAt: number) => {
+		setResult((prev) =>
+			prev ? { ...prev, splitAt: newSplitAt, corrected: true } : prev,
+		);
+	};
+
+	return { result, error, isLoading, parse, reset, applyCorrection };
 }
