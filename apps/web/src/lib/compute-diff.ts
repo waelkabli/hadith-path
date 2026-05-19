@@ -6,6 +6,7 @@ export interface DiffVariantEntry {
 }
 
 export interface DiffToken {
+	position: number;
 	baseText: string | null;
 	allMatch: boolean;
 	variants: DiffVariantEntry[];
@@ -51,6 +52,7 @@ export function computeDiff(variants: string[]): DiffToken[] {
 		});
 
 		tokens.push({
+			position: i,
 			baseText: baseWord,
 			allMatch: variantEntries.every((v) => v.status === "match"),
 			variants: variantEntries,

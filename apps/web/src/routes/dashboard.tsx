@@ -2,12 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 
 import { DebugPanel } from "@/components/debug-panel";
+import { DiffView } from "@/components/diff-view";
 import { HadithInput } from "@/components/hadith-input";
 import { HadithSplitView } from "@/components/hadith-split-view";
 import { IsnadChainView } from "@/components/isnad-chain-view";
 import { NarratorBioCard } from "@/components/narrator-bio-card";
 import { NarratorChainView } from "@/components/narrator-chain-view";
 import { NarratorDisambiguationPanel } from "@/components/narrator-disambiguation-panel";
+import { SplitCorrectionEditor } from "@/components/split-correction-editor";
 import { VariantChainView } from "@/components/variant-chain-view";
 import { VariantInputPanel } from "@/components/variant-input-panel";
 import { useCustomNarrators } from "@/hooks/use-custom-narrators";
@@ -43,6 +45,8 @@ function RouteComponent() {
 	const extractor = useNarratorExtraction(currentIsnad);
 	const { records: allRecords, error: dbError } = useNarratorDatabase();
 
+	const [isEditing, setIsEditing] = useState(false);
+	const [activeTab, setActiveTab] = useState<"chain" | "diff">("chain");
 	const [bioPanel, setBioPanel] = useState<BioPanelState>({ type: "closed" });
 	const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
 	const [isInGuidedMode, setIsInGuidedMode] = useState(false);
@@ -74,6 +78,7 @@ function RouteComponent() {
 	const handleReset = useCallback(() => {
 		parser.reset();
 		extractor.reset();
+		setIsEditing(false);
 		for (const v of variants.slice(1)) removeVariant(v.id);
 	}, [parser, extractor, variants, removeVariant]);
 
@@ -116,12 +121,26 @@ function RouteComponent() {
 					}}
 				>
 					<HadithInput onSubmit={handleSubmit} onReset={handleReset} />
-					{parser.result && (
-						<HadithSplitView
-							text={submittedText}
-							splitAt={parser.result.splitAt}
-						/>
-					)}
+					{parser.result &&
+						(isEditing ? (
+							<SplitCorrectionEditor
+								text={submittedText}
+								splitAt={parser.result.splitAt}
+								llmSplitAt={parser.result.llmSplitAt}
+								onConfirm={(newSplitAt) => {
+									parser.applyCorrection(newSplitAt);
+									setIsEditing(false);
+								}}
+								onCancel={() => setIsEditing(false)}
+							/>
+						) : (
+							<HadithSplitView
+								text={submittedText}
+								splitAt={parser.result.splitAt}
+								corrected={parser.result.corrected}
+								onEditSplit={() => setIsEditing(true)}
+							/>
+						))}
 
 					{/* DB load error banner */}
 					{dbError && (
@@ -295,7 +314,7 @@ function RouteComponent() {
 						/>
 					))}
 
-					{/* Chain visualization */}
+					{/* Chain + Diff tabs */}
 					{extractor.narrators &&
 						extractor.narrators.length > 0 &&
 						(() => {
@@ -316,37 +335,97 @@ function RouteComponent() {
 										? { type: "unknown" }
 										: { type: "record", id: recordId },
 								);
+
+							// Variants for the diff view (primary uses submittedText + parser splitAt)
+							const primaryForDiff: Variant = {
+								...variants[0],
+								rawText: submittedText,
+								splitAt: parser.result?.splitAt ?? null,
+							};
+							const variantsForDiff = [primaryForDiff, ...variants.slice(1)];
+
 							return (
-								<div
-									style={{
-										borderTop: "1px solid var(--color-border-subtle)",
-										display: "flex",
-										direction: "ltr",
-									}}
-								>
-									<div style={{ flex: 1, minWidth: 0 }}>
-										{variantsForGraph.length >= 2 ? (
-											<VariantChainView
-												variants={variantsForGraph}
-												records={allRecords}
-												onNodeClick={handleNodeClick}
-											/>
-										) : (
-											<IsnadChainView
-												narrators={extractor.narrators}
-												records={allRecords}
-												onNodeClick={handleNodeClick}
-											/>
-										)}
+								<>
+									{/* Tab bar */}
+									<div
+										style={{
+											borderTop: "1px solid var(--color-border-subtle)",
+											display: "flex",
+											direction: "rtl",
+										}}
+									>
+										{(
+											[
+												{ id: "chain", label: "السلسلة" },
+												{ id: "diff", label: "المقارنة" },
+											] as const
+										).map((tab) => (
+											<button
+												key={tab.id}
+												type="button"
+												onClick={() => setActiveTab(tab.id)}
+												style={{
+													padding: "var(--space-3) var(--space-5)",
+													fontFamily: "var(--font-ui-arabic)",
+													fontSize: "var(--text-sm)",
+													color:
+														activeTab === tab.id
+															? "var(--color-text-primary)"
+															: "var(--color-text-tertiary)",
+													background: "transparent",
+													border: "none",
+													borderBottom:
+														activeTab === tab.id
+															? "2px solid var(--color-gold-400)"
+															: "2px solid transparent",
+													cursor: "pointer",
+													lineHeight: 1,
+													fontWeight:
+														activeTab === tab.id
+															? "var(--weight-medium)"
+															: "var(--weight-regular)",
+												}}
+											>
+												{tab.label}
+											</button>
+										))}
 									</div>
-									{bioPanel.type !== "closed" && (
-										<NarratorBioCard
-											record={selectedRecord}
-											allRecords={allRecords}
-											onClose={() => setBioPanel({ type: "closed" })}
-										/>
+
+									{/* Tab content */}
+									{activeTab === "chain" ? (
+										<div
+											style={{
+												display: "flex",
+												direction: "ltr",
+											}}
+										>
+											<div style={{ flex: 1, minWidth: 0 }}>
+												{variantsForGraph.length >= 2 ? (
+													<VariantChainView
+														variants={variantsForGraph}
+														records={allRecords}
+														onNodeClick={handleNodeClick}
+													/>
+												) : (
+													<IsnadChainView
+														narrators={extractor.narrators}
+														records={allRecords}
+														onNodeClick={handleNodeClick}
+													/>
+												)}
+											</div>
+											{bioPanel.type !== "closed" && (
+												<NarratorBioCard
+													record={selectedRecord}
+													allRecords={allRecords}
+													onClose={() => setBioPanel({ type: "closed" })}
+												/>
+											)}
+										</div>
+									) : (
+										<DiffView variants={variantsForDiff} />
 									)}
-								</div>
+								</>
 							);
 						})()}
 				</div>
