@@ -11,6 +11,7 @@ Isnad chain analyzer — paste a hadith, and the app separates the isnad from th
 5. **Narrator database** — bundled biographical database of classical hadith narrators with Arabic names, transliteration, dates, generation, reliability grades, teacher/student relationships, and source collections; supports custom narrator entries
 6. **Isnad chain visualization** — renders the chain as a right-to-left reactflow graph; each node shows the narrator's name and reliability grade; clicking a node opens a read-only biography panel
 7. **Multi-variant comparison** — load up to five versions of the same hadith and overlay their chains; narrators shared across versions merge into a single node, divergences branch visually; edges are color-coded per variant with a legend
+8. **Matn diff view** — compare the hadith body across loaded variants word by word; matched words are neutral, substitutions and additions are annotated with the variant's color; toggle between inline and side-by-side layouts
 
 The app runs entirely in the browser. Your Anthropic API key is stored locally and never sent anywhere except the Anthropic API directly.
 
