@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
+import type { Edge, Node, ReactFlowInstance } from "@xyflow/react";
+import { useCallback, useRef, useState } from "react";
 
 import { DebugPanel } from "@/components/debug-panel";
 import { DiffView } from "@/components/diff-view";
+import { ExportToolbar } from "@/components/export-toolbar";
 import { HadithInput } from "@/components/hadith-input";
 import { HadithSplitView } from "@/components/hadith-split-view";
 import { IsnadChainView } from "@/components/isnad-chain-view";
@@ -13,6 +15,7 @@ import { SplitCorrectionEditor } from "@/components/split-correction-editor";
 import { VariantChainView } from "@/components/variant-chain-view";
 import { VariantInputPanel } from "@/components/variant-input-panel";
 import { useCustomNarrators } from "@/hooks/use-custom-narrators";
+import { useExport } from "@/hooks/use-export";
 import { useHadithParser } from "@/hooks/use-hadith-parser";
 import { useNarratorDatabase } from "@/hooks/use-narrator-database";
 import { useNarratorExtraction } from "@/hooks/use-narrator-extraction";
@@ -54,6 +57,21 @@ function RouteComponent() {
 	const customNarrators = useCustomNarrators();
 	const { variants, canAddMore, addVariant, removeVariant, updateVariant } =
 		useVariants();
+
+	// Refs for export
+	const splitViewRef = useRef<HTMLElement | null>(null);
+	const narratorListRef = useRef<HTMLElement | null>(null);
+	const chainContainerRef = useRef<HTMLElement | null>(null);
+	const diffViewRef = useRef<HTMLElement | null>(null);
+	const rfInstanceRef = useRef<ReactFlowInstance | null>(null);
+
+	const exportHook = useExport({
+		splitViewRef,
+		narratorListRef,
+		chainContainerRef,
+		diffViewRef,
+		rfInstanceRef,
+	});
 
 	const selectedRecord =
 		bioPanel.type === "record"
@@ -134,12 +152,18 @@ function RouteComponent() {
 								onCancel={() => setIsEditing(false)}
 							/>
 						) : (
-							<HadithSplitView
-								text={submittedText}
-								splitAt={parser.result.splitAt}
-								corrected={parser.result.corrected}
-								onEditSplit={() => setIsEditing(true)}
-							/>
+							<div
+								ref={(el) => {
+									splitViewRef.current = el;
+								}}
+							>
+								<HadithSplitView
+									text={submittedText}
+									splitAt={parser.result.splitAt}
+									corrected={parser.result.corrected}
+									onEditSplit={() => setIsEditing(true)}
+								/>
+							</div>
 						))}
 
 					{/* DB load error banner */}
@@ -169,28 +193,34 @@ function RouteComponent() {
 						</div>
 					)}
 
-					<NarratorChainView
-						narrators={extractor.narrators}
-						isLoading={extractor.isLoading}
-						error={extractor.error}
-						isStale={extractor.isStale}
-						showReExtract={showReExtract}
-						records={allRecords}
-						onRetry={() =>
-							extractor.extract(
-								submittedText.slice(0, parser.result?.splitAt ?? 0),
-								allRecords,
-							)
-						}
-						onReExtract={handleReExtract}
-						selectedPosition={selectedPosition}
-						onSelect={setSelectedPosition}
-						onStartGuided={() => {
-							if (flaggedNarrators.length === 0) return;
-							setIsInGuidedMode(true);
-							setSelectedPosition(flaggedNarrators[0].position);
+					<div
+						ref={(el) => {
+							narratorListRef.current = el;
 						}}
-					/>
+					>
+						<NarratorChainView
+							narrators={extractor.narrators}
+							isLoading={extractor.isLoading}
+							error={extractor.error}
+							isStale={extractor.isStale}
+							showReExtract={showReExtract}
+							records={allRecords}
+							onRetry={() =>
+								extractor.extract(
+									submittedText.slice(0, parser.result?.splitAt ?? 0),
+									allRecords,
+								)
+							}
+							onReExtract={handleReExtract}
+							selectedPosition={selectedPosition}
+							onSelect={setSelectedPosition}
+							onStartGuided={() => {
+								if (flaggedNarrators.length === 0) return;
+								setIsInGuidedMode(true);
+								setSelectedPosition(flaggedNarrators[0].position);
+							}}
+						/>
+					</div>
 
 					{selectedPosition !== null &&
 						extractor.narrators &&
@@ -346,6 +376,9 @@ function RouteComponent() {
 
 							return (
 								<>
+									{/* Export toolbar — visible once analysis is ready */}
+									<ExportToolbar exportHook={exportHook} />
+
 									{/* Tab bar */}
 									<div
 										style={{
@@ -399,18 +432,37 @@ function RouteComponent() {
 												direction: "ltr",
 											}}
 										>
-											<div style={{ flex: 1, minWidth: 0 }}>
+											<div
+												ref={(el) => {
+													chainContainerRef.current = el;
+												}}
+												style={{ flex: 1, minWidth: 0 }}
+											>
 												{variantsForGraph.length >= 2 ? (
 													<VariantChainView
 														variants={variantsForGraph}
 														records={allRecords}
 														onNodeClick={handleNodeClick}
+														onInit={(inst) => {
+															rfInstanceRef.current =
+																inst as unknown as ReactFlowInstance<
+																	Node,
+																	Edge
+																>;
+														}}
 													/>
 												) : (
 													<IsnadChainView
 														narrators={extractor.narrators}
 														records={allRecords}
 														onNodeClick={handleNodeClick}
+														onInit={(inst) => {
+															rfInstanceRef.current =
+																inst as unknown as ReactFlowInstance<
+																	Node,
+																	Edge
+																>;
+														}}
 													/>
 												)}
 											</div>
@@ -423,7 +475,13 @@ function RouteComponent() {
 											)}
 										</div>
 									) : (
-										<DiffView variants={variantsForDiff} />
+										<div
+											ref={(el) => {
+												diffViewRef.current = el;
+											}}
+										>
+											<DiffView variants={variantsForDiff} />
+										</div>
 									)}
 								</>
 							);

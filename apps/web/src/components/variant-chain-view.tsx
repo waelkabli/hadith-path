@@ -9,6 +9,7 @@ import {
 	MarkerType,
 	type Node,
 	type NodeProps,
+	type OnInit,
 	Position,
 	ReactFlow,
 } from "@xyflow/react";
@@ -248,12 +249,14 @@ interface VariantChainViewProps {
 	variants: Variant[];
 	records: NarratorRecord[];
 	onNodeClick: (narratorId: string | null) => void;
+	onInit?: OnInit<Node<NarratorNodeData>, Edge>;
 }
 
 export function VariantChainView({
 	variants,
 	records,
 	onNodeClick,
+	onInit,
 }: VariantChainViewProps) {
 	const { rfNodes, rfEdges } = useMemo(() => {
 		const variantInputs = variants.map((v) => ({
@@ -292,6 +295,7 @@ export function VariantChainView({
 				nodesDraggable={false}
 				nodesConnectable={false}
 				elementsSelectable={false}
+				onInit={onInit}
 				onNodeClick={(_evt, node) => {
 					const recordId = node.id.startsWith("unknown-") ? null : node.id;
 					onNodeClick(recordId);

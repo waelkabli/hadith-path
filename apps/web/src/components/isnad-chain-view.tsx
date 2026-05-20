@@ -9,6 +9,7 @@ import {
 	MarkerType,
 	type Node,
 	type NodeProps,
+	type OnInit,
 	Position,
 	ReactFlow,
 } from "@xyflow/react";
@@ -235,12 +236,14 @@ interface IsnadChainViewProps {
 	narrators: NarratorMatch[];
 	records: NarratorRecord[];
 	onNodeClick?: (recordId: string | null) => void;
+	onInit?: OnInit<Node<NarratorNodeData>, Edge>;
 }
 
 export function IsnadChainView({
 	narrators,
 	records,
 	onNodeClick,
+	onInit,
 }: IsnadChainViewProps) {
 	const { rfNodes, rfEdges } = useMemo(() => {
 		const graph = buildChainGraph(narrators, records);
@@ -269,6 +272,7 @@ export function IsnadChainView({
 				nodesDraggable={false}
 				nodesConnectable={false}
 				elementsSelectable={false}
+				onInit={onInit}
 				onNodeClick={
 					onNodeClick
 						? (_evt, node) => {

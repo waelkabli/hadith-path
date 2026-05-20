@@ -13,6 +13,8 @@ export interface NarratorMatchEntry {
 	topMatches: { narratorId: string; score: number }[];
 	selectedId: string | null;
 	userOverride: boolean;
+	confidence: "high" | "medium" | "low";
+	isAmbiguous: boolean;
 }
 
 export interface NarratorExtraction {
