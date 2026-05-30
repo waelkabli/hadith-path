@@ -11,6 +11,8 @@ export interface NarratorMatchInput {
 export interface NarratorRecordInput {
 	id: string;
 	reliabilityGrade: string;
+	nameTransliterated: string;
+	deathYear: number | null;
 }
 
 export type MatchState = "auto" | "confirmed" | "unknown" | "flagged";
@@ -21,6 +23,8 @@ export interface ChainNode {
 	position: number;
 	matchState: MatchState;
 	reliabilityGrade: string | null;
+	nameTransliterated: string | null;
+	deathYear: number | null;
 }
 
 export interface ChainEdge {
@@ -61,6 +65,8 @@ export function buildChainGraph(
 			position: narrator.position,
 			matchState,
 			reliabilityGrade: record?.reliabilityGrade ?? null,
+			nameTransliterated: record?.nameTransliterated ?? null,
+			deathYear: record?.deathYear ?? null,
 		};
 	});
 

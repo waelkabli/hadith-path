@@ -15,43 +15,22 @@ export function HadithSplitView({
 	const matn = text.slice(splitAt).trim();
 
 	return (
-		<div
-			style={{
-				display: "flex",
-				flexDirection: "column",
-				gap: "var(--space-5)",
-				padding: "var(--space-5)",
-				borderTop: "1px solid var(--color-border-subtle)",
-				direction: "rtl",
-			}}
-		>
-			{/* Top row: corrected badge + edit button */}
+		<>
+			{/* Split actions bar */}
 			<div
 				style={{
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
+					padding: "var(--space-2) var(--space-5)",
+					height: "2.75rem",
+					background: "var(--color-surface-sunken)",
+					borderTop: "1px solid var(--color-border-subtle)",
+					borderBottom: "1px solid var(--color-border-subtle)",
+					direction: "rtl",
 				}}
 			>
-				<div>
-					{corrected && (
-						<span
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								padding: "var(--space-1) var(--space-2)",
-								background: "var(--color-warning-bg)",
-								border: "1px solid var(--color-warning-border)",
-								borderRadius: "var(--radius-sm)",
-								fontFamily: "var(--font-ui-arabic)",
-								fontSize: "var(--text-xs)",
-								color: "var(--color-warning-text)",
-							}}
-						>
-							تم التعديل يدوياً
-						</span>
-					)}
-				</div>
+				{/* Right (RTL leading): edit button */}
 				{onEditSplit && (
 					<button
 						type="button"
@@ -73,10 +52,43 @@ export function HadithSplitView({
 						تعديل نقطة الفصل
 					</button>
 				)}
+				{/* Left (RTL trailing): corrected badge */}
+				<div>
+					{corrected && (
+						<span
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								padding: "var(--space-1) var(--space-2)",
+								background: "var(--color-warning-bg)",
+								border: "1px solid var(--color-warning-border)",
+								borderRadius: "var(--radius-sm)",
+								fontFamily: "var(--font-ui-arabic)",
+								fontSize: "var(--text-xs)",
+								fontWeight: "var(--weight-medium)",
+								color: "var(--color-warning-text)",
+							}}
+						>
+							تم التعديل يدوياً
+						</span>
+					)}
+				</div>
 			</div>
-			<SplitSection label="السند" text={isnad} />
-			<SplitSection label="المتن" text={matn} />
-		</div>
+
+			{/* Isnad + Matn sections */}
+			<div
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					gap: "var(--space-4)",
+					padding: "var(--space-4) var(--space-5)",
+					direction: "rtl",
+				}}
+			>
+				<SplitSection label="السند" text={isnad} />
+				<SplitSection label="المتن" text={matn} />
+			</div>
+		</>
 	);
 }
 

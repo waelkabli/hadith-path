@@ -350,7 +350,6 @@ export function NarratorDisambiguationPanel({
 		<div
 			style={{
 				borderTop: "1px solid var(--color-border-subtle)",
-				padding: "var(--space-4) var(--space-5)",
 				direction: "rtl",
 				background: "var(--color-surface-sunken)",
 			}}
@@ -361,7 +360,8 @@ export function NarratorDisambiguationPanel({
 					display: "flex",
 					alignItems: "flex-start",
 					justifyContent: "space-between",
-					marginBottom: "var(--space-4)",
+					padding: "var(--space-4) var(--space-5)",
+					borderBottom: "1px solid var(--color-border-subtle)",
 				}}
 			>
 				<div>
@@ -398,26 +398,45 @@ export function NarratorDisambiguationPanel({
 						border: "none",
 						cursor: "pointer",
 						color: "var(--color-text-tertiary)",
-						padding: 2,
+						padding: 4,
 						flexShrink: 0,
 						lineHeight: 1,
-						fontFamily: "var(--font-ui)",
-						fontSize: "var(--text-base)",
+						borderRadius: "var(--radius-md)",
+						width: 24,
+						height: 24,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
 					}}
 				>
-					✕
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 14 14"
+						fill="none"
+						aria-hidden="true"
+					>
+						<path
+							d="M2 2l10 10M12 2L2 12"
+							stroke="currentColor"
+							strokeWidth="1.5"
+							strokeLinecap="round"
+						/>
+					</svg>
 				</button>
 			</div>
 
 			{isAdding ? (
 				/* Add form — hides candidate list */
-				<NarratorAddForm
-					onSubmit={(data) => {
-						onAddCustom(data);
-						setIsAdding(false);
-					}}
-					onCancel={() => setIsAdding(false)}
-				/>
+				<div style={{ padding: "var(--space-4) var(--space-5)" }}>
+					<NarratorAddForm
+						onSubmit={(data) => {
+							onAddCustom(data);
+							setIsAdding(false);
+						}}
+						onCancel={() => setIsAdding(false)}
+					/>
+				</div>
 			) : (
 				<>
 					{/* Candidate list */}
@@ -426,11 +445,10 @@ export function NarratorDisambiguationPanel({
 							style={{
 								listStyle: "none",
 								margin: 0,
-								padding: 0,
+								padding: "var(--space-3) var(--space-5) 0",
 								display: "flex",
 								flexDirection: "column",
 								gap: "var(--space-2)",
-								marginBottom: "var(--space-4)",
 							}}
 						>
 							{sorted.map(({ narratorId, score }) => {
@@ -700,13 +718,16 @@ export function NarratorDisambiguationPanel({
 						</ul>
 					)}
 
-					{/* Action buttons */}
+					{/* Action buttons footer */}
 					<div
 						style={{
 							display: "flex",
 							gap: "var(--space-2)",
 							flexWrap: "wrap",
 							alignItems: "center",
+							borderTop: "1px solid var(--color-border-subtle)",
+							padding: "var(--space-3) var(--space-5)",
+							marginTop: "var(--space-2)",
 						}}
 					>
 						<button

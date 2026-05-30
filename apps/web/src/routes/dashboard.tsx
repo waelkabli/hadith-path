@@ -124,8 +124,8 @@ function RouteComponent() {
 					flexDirection: "column",
 					alignItems: "center",
 					justifyContent: "flex-start",
-					padding: "var(--space-12) var(--space-6)",
-					paddingBottom: "calc(var(--space-12) + 40vh)",
+					padding: "var(--space-8) var(--space-6)",
+					paddingBottom: "calc(var(--space-8) + 40vh)",
 				}}
 			>
 				<div
@@ -427,50 +427,29 @@ function RouteComponent() {
 									{/* Tab content */}
 									{activeTab === "chain" ? (
 										<div
-											style={{
-												display: "flex",
-												direction: "ltr",
+											ref={(el) => {
+												chainContainerRef.current = el;
 											}}
 										>
-											<div
-												ref={(el) => {
-													chainContainerRef.current = el;
-												}}
-												style={{ flex: 1, minWidth: 0 }}
-											>
-												{variantsForGraph.length >= 2 ? (
-													<VariantChainView
-														variants={variantsForGraph}
-														records={allRecords}
-														onNodeClick={handleNodeClick}
-														onInit={(inst) => {
-															rfInstanceRef.current =
-																inst as unknown as ReactFlowInstance<
-																	Node,
-																	Edge
-																>;
-														}}
-													/>
-												) : (
-													<IsnadChainView
-														narrators={extractor.narrators}
-														records={allRecords}
-														onNodeClick={handleNodeClick}
-														onInit={(inst) => {
-															rfInstanceRef.current =
-																inst as unknown as ReactFlowInstance<
-																	Node,
-																	Edge
-																>;
-														}}
-													/>
-												)}
-											</div>
-											{bioPanel.type !== "closed" && (
-												<NarratorBioCard
-													record={selectedRecord}
-													allRecords={allRecords}
-													onClose={() => setBioPanel({ type: "closed" })}
+											{variantsForGraph.length >= 2 ? (
+												<VariantChainView
+													variants={variantsForGraph}
+													records={allRecords}
+													onNodeClick={handleNodeClick}
+													onInit={(inst) => {
+														rfInstanceRef.current =
+															inst as unknown as ReactFlowInstance<Node, Edge>;
+													}}
+												/>
+											) : (
+												<IsnadChainView
+													narrators={extractor.narrators}
+													records={allRecords}
+													onNodeClick={handleNodeClick}
+													onInit={(inst) => {
+														rfInstanceRef.current =
+															inst as unknown as ReactFlowInstance<Node, Edge>;
+													}}
 												/>
 											)}
 										</div>
@@ -489,6 +468,13 @@ function RouteComponent() {
 				</div>
 			</div>
 			<DebugPanel />
+			{bioPanel.type !== "closed" && (
+				<NarratorBioCard
+					record={selectedRecord}
+					allRecords={allRecords}
+					onClose={() => setBioPanel({ type: "closed" })}
+				/>
+			)}
 		</>
 	);
 }

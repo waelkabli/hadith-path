@@ -43,25 +43,30 @@ export function NarratorChainView({
 		<div
 			style={{
 				borderTop: "1px solid var(--color-border-subtle)",
-				padding: "var(--space-5)",
 				direction: "rtl",
 				display: "flex",
 				flexDirection: "column",
-				gap: "var(--space-4)",
 			}}
 		>
+			{/* Section header bar */}
 			<div
 				style={{
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
-					gap: "var(--space-3)",
+					padding: "var(--space-2) var(--space-5)",
+					minHeight: "2.75rem",
+					borderBottom:
+						narrators && narrators.length > 0
+							? "1px solid var(--color-border-subtle)"
+							: undefined,
 				}}
 			>
+				{/* Right (RTL leading): label */}
 				<span
 					style={{
 						fontFamily: "var(--font-ui-arabic)",
-						fontSize: "var(--text-xs)",
+						fontSize: "var(--text-2xs, 0.6875rem)",
 						fontWeight: "var(--weight-medium)",
 						color: "var(--color-text-tertiary)",
 						letterSpacing: "0.07em",
@@ -72,261 +77,283 @@ export function NarratorChainView({
 				>
 					الرواة
 					{isStale && !isLoading && (
-						<span
-							style={{
-								fontFamily: "var(--font-ui-arabic)",
-								fontSize: "var(--text-xs)",
-								color: "var(--color-text-quaternary, #9ca3af)",
-								fontWeight: "var(--weight-normal)",
-							}}
-						>
-							· قديم
-						</span>
+						<span style={{ color: "#9ca3af", fontWeight: 400 }}>· قديم</span>
 					)}
 				</span>
 
-				{showReExtract && !isLoading && (
-					<button
-						type="button"
-						onClick={onReExtract}
-						style={{
-							fontFamily: "var(--font-ui-arabic)",
-							fontSize: "var(--text-xs)",
-							color: "var(--color-text-link, #2563eb)",
-							background: "none",
-							border: "1px solid var(--color-border-default)",
-							borderRadius: "var(--radius-md)",
-							cursor: "pointer",
-							padding: "2px var(--space-3)",
-							whiteSpace: "nowrap",
-						}}
-					>
-						إعادة الاستخراج
-					</button>
-				)}
-			</div>
-
-			{isLoading && (
+				{/* Left (RTL trailing): count or re-extract */}
 				<div
 					style={{
 						display: "flex",
 						alignItems: "center",
 						gap: "var(--space-2)",
-						color: "var(--color-text-secondary)",
-						fontSize: "var(--text-sm)",
-						fontFamily: "var(--font-ui-arabic)",
 					}}
 				>
-					<Spinner />
-					<span>جارٍ استخراج الرواة…</span>
-				</div>
-			)}
-
-			{error && !isLoading && (
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: "var(--space-3)",
-						flexWrap: "wrap",
-					}}
-				>
-					<span
-						style={{
-							fontFamily: "var(--font-ui-arabic)",
-							fontSize: "var(--text-sm)",
-							color: "var(--color-error, #dc2626)",
-						}}
-					>
-						{error}
-					</span>
-					<button
-						type="button"
-						onClick={onRetry}
-						style={{
-							fontFamily: "var(--font-ui-arabic)",
-							fontSize: "var(--text-sm)",
-							color: "var(--color-text-link, #2563eb)",
-							background: "none",
-							border: "none",
-							cursor: "pointer",
-							padding: 0,
-							textDecoration: "underline",
-						}}
-					>
-						إعادة المحاولة
-					</button>
-				</div>
-			)}
-
-			{narrators && narrators.length > 0 && !isLoading && (
-				<>
-					{/* Phase 2 — Summary banner */}
-					{unresolvedCount > 0 && (
-						<div
+					{narrators && narrators.length > 0 && !isLoading && (
+						<span
 							style={{
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								gap: "var(--space-3)",
-								padding: "var(--space-3) var(--space-4)",
-								background: "#fef9c3",
-								border: "1px solid #fde047",
-								borderRadius: "var(--radius-md)",
+								fontFamily: "var(--font-ui-arabic)",
+								fontSize: "var(--text-xs)",
+								color: "var(--color-text-tertiary)",
 							}}
 						>
-							<span
-								style={{
-									fontFamily: "var(--font-ui-arabic)",
-									fontSize: "var(--text-sm)",
-									color: "#92400e",
-								}}
-							>
-								{unresolvedCount === 1
-									? "١ راوٍ غير محدد"
-									: `${toArabicNumeral(unresolvedCount)} رواة غير محددين`}
-							</span>
-							<button
-								type="button"
-								onClick={onStartGuided}
-								style={{
-									fontFamily: "var(--font-ui-arabic)",
-									fontSize: "var(--text-xs)",
-									fontWeight: "var(--weight-medium)",
-									color: "#92400e",
-									background: "#fde047",
-									border: "none",
-									borderRadius: "var(--radius-md)",
-									cursor: "pointer",
-									padding: "2px var(--space-3)",
-									whiteSpace: "nowrap",
-								}}
-							>
-								راجع الآن
-							</button>
-						</div>
+							{`${toArabicNumeral(narrators.length)} رواة`}
+						</span>
 					)}
+					{showReExtract && !isLoading && (
+						<button
+							type="button"
+							onClick={onReExtract}
+							style={{
+								fontFamily: "var(--font-ui-arabic)",
+								fontSize: "var(--text-xs)",
+								color: "var(--color-text-link)",
+								background: "none",
+								border: "1px solid var(--color-border-default)",
+								borderRadius: "var(--radius-md)",
+								cursor: "pointer",
+								padding: "2px var(--space-3)",
+								whiteSpace: "nowrap",
+							}}
+						>
+							إعادة الاستخراج
+						</button>
+					)}
+				</div>
+			</div>
 
-					<ol
+			{/* Narrator list body */}
+			<div style={{ padding: "var(--space-2) var(--space-5) var(--space-5)" }}>
+				{isLoading && (
+					<div
 						style={{
-							listStyle: "none",
-							margin: 0,
-							padding: 0,
 							display: "flex",
-							flexDirection: "column",
+							alignItems: "center",
 							gap: "var(--space-2)",
-							opacity: isStale ? 0.6 : 1,
-							transition: "opacity 0.15s ease",
+							color: "var(--color-text-secondary)",
+							fontSize: "var(--text-sm)",
+							fontFamily: "var(--font-ui-arabic)",
 						}}
 					>
-						{narrators.map((narrator) => {
-							const isSelected = narrator.position === selectedPosition;
-							const resolvedRecord =
-								narrator.selectedId && records
-									? records.find((r) => r.id === narrator.selectedId)
-									: undefined;
-							const isConfirmed =
-								narrator.userOverride &&
-								narrator.selectedId !== null &&
-								(!records || resolvedRecord !== undefined);
-							const isUnknown =
-								narrator.userOverride &&
-								(narrator.selectedId === null ||
-									(records !== undefined && resolvedRecord === undefined));
+						<Spinner />
+						<span>جارٍ استخراج الرواة…</span>
+					</div>
+				)}
 
-							let borderColor: string;
-							let backgroundColor: string;
-							if (isSelected) {
-								borderColor = "#2563eb";
-								backgroundColor = "#eff6ff";
-							} else if (isConfirmed) {
-								borderColor = "#16a34a";
-								backgroundColor = "var(--color-surface-sunken)";
-							} else if (isUnknown) {
-								borderColor = "#9ca3af";
-								backgroundColor = "var(--color-surface-sunken)";
-							} else {
-								borderColor = "var(--color-border-default)";
-								backgroundColor = "var(--color-surface-sunken)";
-							}
+				{error && !isLoading && (
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "var(--space-3)",
+							flexWrap: "wrap",
+						}}
+					>
+						<span
+							style={{
+								fontFamily: "var(--font-ui-arabic)",
+								fontSize: "var(--text-sm)",
+								color: "var(--color-error, #dc2626)",
+							}}
+						>
+							{error}
+						</span>
+						<button
+							type="button"
+							onClick={onRetry}
+							style={{
+								fontFamily: "var(--font-ui-arabic)",
+								fontSize: "var(--text-sm)",
+								color: "var(--color-text-link, #2563eb)",
+								background: "none",
+								border: "none",
+								cursor: "pointer",
+								padding: 0,
+								textDecoration: "underline",
+							}}
+						>
+							إعادة المحاولة
+						</button>
+					</div>
+				)}
 
-							const clickable = Boolean(onSelect);
-
-							return (
-								<li
-									key={narrator.position}
-									role={clickable ? "button" : undefined}
-									tabIndex={clickable ? 0 : undefined}
-									onClick={
-										clickable ? () => onSelect?.(narrator.position) : undefined
-									}
-									onKeyDown={
-										clickable
-											? (e) => {
-													if (e.key === "Enter" || e.key === " ") {
-														e.preventDefault();
-														onSelect?.(narrator.position);
-													}
-												}
-											: undefined
-									}
+				{narrators && narrators.length > 0 && !isLoading && (
+					<>
+						{/* Phase 2 — Summary banner */}
+						{unresolvedCount > 0 && (
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									gap: "var(--space-3)",
+									padding: "var(--space-3) var(--space-4)",
+									background: "#fef9c3",
+									border: "1px solid #fde047",
+									borderRadius: "var(--radius-md)",
+								}}
+							>
+								<span
 									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "var(--space-3)",
-										padding: "var(--space-2) var(--space-3)",
-										background: backgroundColor,
-										borderRadius: "var(--radius-md)",
-										border: `1px solid ${borderColor}`,
-										cursor: clickable ? "pointer" : undefined,
-										transition: "border-color 0.1s ease, background 0.1s ease",
+										fontFamily: "var(--font-ui-arabic)",
+										fontSize: "var(--text-sm)",
+										color: "#92400e",
 									}}
 								>
-									<span
-										style={{
-											fontFamily: "var(--font-ui)",
-											fontSize: "var(--text-xs)",
-											color: "var(--color-text-tertiary)",
-											minWidth: "1.25rem",
-											textAlign: "center",
-											direction: "ltr",
-											flexShrink: 0,
-										}}
-									>
-										{narrator.position + 1}
-									</span>
-									<span
-										style={{
-											fontFamily: "var(--font-display-arabic)",
-											fontSize: "var(--text-base)",
-											color: "var(--color-text-primary)",
-											lineHeight: "1.7",
-											flex: 1,
-										}}
-									>
-										{narrator.extractedName}
-									</span>
-									<div
+									{unresolvedCount === 1
+										? "١ راوٍ غير محدد"
+										: `${toArabicNumeral(unresolvedCount)} رواة غير محددين`}
+								</span>
+								<button
+									type="button"
+									onClick={onStartGuided}
+									style={{
+										fontFamily: "var(--font-ui-arabic)",
+										fontSize: "var(--text-xs)",
+										fontWeight: "var(--weight-medium)",
+										color: "#92400e",
+										background: "#fde047",
+										border: "none",
+										borderRadius: "var(--radius-md)",
+										cursor: "pointer",
+										padding: "2px var(--space-3)",
+										whiteSpace: "nowrap",
+									}}
+								>
+									راجع الآن
+								</button>
+							</div>
+						)}
+
+						<ol
+							style={{
+								listStyle: "none",
+								margin: 0,
+								padding: 0,
+								display: "flex",
+								flexDirection: "column",
+								gap: "var(--space-2)",
+								opacity: isStale ? 0.6 : 1,
+								transition: "opacity 0.15s ease",
+							}}
+						>
+							{narrators.map((narrator) => {
+								const isSelected = narrator.position === selectedPosition;
+								const resolvedRecord =
+									narrator.selectedId && records
+										? records.find((r) => r.id === narrator.selectedId)
+										: undefined;
+								const isConfirmed =
+									narrator.userOverride &&
+									narrator.selectedId !== null &&
+									(!records || resolvedRecord !== undefined);
+								const isUnknown =
+									narrator.userOverride &&
+									(narrator.selectedId === null ||
+										(records !== undefined && resolvedRecord === undefined));
+
+								let borderColor: string;
+								let backgroundColor: string;
+								if (isSelected) {
+									borderColor = "#2563eb";
+									backgroundColor = "#eff6ff";
+								} else if (isConfirmed) {
+									borderColor = "#16a34a";
+									backgroundColor = "var(--color-surface-sunken)";
+								} else if (isUnknown) {
+									borderColor = "#9ca3af";
+									backgroundColor = "var(--color-surface-sunken)";
+								} else {
+									borderColor = "var(--color-border-default)";
+									backgroundColor = "var(--color-surface-sunken)";
+								}
+
+								const clickable = Boolean(onSelect);
+
+								return (
+									<li
+										key={narrator.position}
+										role={clickable ? "button" : undefined}
+										tabIndex={clickable ? 0 : undefined}
+										onClick={
+											clickable
+												? () => onSelect?.(narrator.position)
+												: undefined
+										}
+										onKeyDown={
+											clickable
+												? (e) => {
+														if (e.key === "Enter" || e.key === " ") {
+															e.preventDefault();
+															onSelect?.(narrator.position);
+														}
+													}
+												: undefined
+										}
 										style={{
 											display: "flex",
 											alignItems: "center",
-											gap: "var(--space-2)",
-											flexShrink: 0,
+											gap: "var(--space-3)",
+											padding: "var(--space-2) var(--space-3)",
+											background: backgroundColor,
+											borderRadius: "var(--radius-md)",
+											border: `1px solid ${borderColor}`,
+											cursor: clickable ? "pointer" : undefined,
+											transition:
+												"border-color 0.1s ease, background 0.1s ease",
 										}}
 									>
-										{isConfirmed && <CheckIcon />}
-										{isUnknown && <UnknownIcon />}
-										{narrator.isAmbiguous && !isConfirmed && !isUnknown && (
-											<AmbiguityIcon />
-										)}
-										<ConfidenceBadge confidence={narrator.confidence} />
-									</div>
-								</li>
-							);
-						})}
-					</ol>
-				</>
-			)}
+										<span
+											style={{
+												fontFamily: "var(--font-ui)",
+												fontSize: "var(--text-xs)",
+												color: "var(--color-text-tertiary)",
+												minWidth: "1.25rem",
+												textAlign: "center",
+												direction: "ltr",
+												flexShrink: 0,
+											}}
+										>
+											{narrator.position + 1}
+										</span>
+										<span
+											style={{
+												fontFamily: "var(--font-display-arabic)",
+												fontSize: "var(--text-base)",
+												color: "var(--color-text-primary)",
+												lineHeight: "1.7",
+												flex: 1,
+											}}
+										>
+											{narrator.extractedName}
+										</span>
+										<div
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: "var(--space-2)",
+												flexShrink: 0,
+											}}
+										>
+											{resolvedRecord?.reliabilityGrade && (
+												<ReliabilityBadge
+													grade={resolvedRecord.reliabilityGrade}
+												/>
+											)}
+											<ConfidenceBadge confidence={narrator.confidence} />
+											{isConfirmed && <CheckIcon />}
+											{isUnknown && <UnknownIcon />}
+											{narrator.isAmbiguous && !isConfirmed && !isUnknown && (
+												<AmbiguityIcon />
+											)}
+										</div>
+									</li>
+								);
+							})}
+						</ol>
+					</>
+				)}
+			</div>
 		</div>
 	);
 }
@@ -350,7 +377,7 @@ function toArabicNumeral(n: number): string {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-const BADGE_STYLES: Record<
+const CONFIDENCE_STYLES: Record<
 	NarratorMatch["confidence"],
 	{ background: string; color: string; label: string }
 > = {
@@ -364,7 +391,7 @@ function ConfidenceBadge({
 }: {
 	confidence: NarratorMatch["confidence"];
 }) {
-	const { background, color, label } = BADGE_STYLES[confidence];
+	const { background, color, label } = CONFIDENCE_STYLES[confidence];
 	return (
 		<span
 			style={{
@@ -380,6 +407,39 @@ function ConfidenceBadge({
 			}}
 		>
 			{label}
+		</span>
+	);
+}
+
+const GRADE_BADGE_STYLES: Record<
+	string,
+	{ bg: string; border: string; text: string }
+> = {
+	ثقة: { bg: "#eef9f8", border: "#9fddd8", text: "#1d8a80" },
+	صدوق: { bg: "#eef6fe", border: "#93c8f5", text: "#1a4e7a" },
+	ضعيف: { bg: "#fef6e6", border: "#f0c060", text: "#8a5a00" },
+	متروك: { bg: "#fef0f0", border: "#f0a0a0", text: "#8a1515" },
+	مجهول: { bg: "#f3f2ef", border: "#d8d5ce", text: "#625e56" },
+};
+
+function ReliabilityBadge({ grade }: { grade: string }) {
+	const style = GRADE_BADGE_STYLES[grade] ?? GRADE_BADGE_STYLES.مجهول;
+	return (
+		<span
+			style={{
+				fontFamily: "var(--font-ui-arabic)",
+				fontSize: "var(--text-2xs, 0.6875rem)",
+				fontWeight: "var(--weight-medium)",
+				background: style.bg,
+				border: `1px solid ${style.border}`,
+				color: style.text,
+				borderRadius: "var(--radius-sm)",
+				padding: "2px 8px",
+				direction: "rtl",
+				whiteSpace: "nowrap",
+			}}
+		>
+			{grade}
 		</span>
 	);
 }

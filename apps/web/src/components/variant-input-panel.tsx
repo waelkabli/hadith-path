@@ -80,6 +80,7 @@ export function VariantInputPanel({
 					gap: "var(--space-2)",
 					padding: "var(--space-3) var(--space-5)",
 					justifyContent: "space-between",
+					background: "var(--color-surface-sunken)",
 				}}
 			>
 				<div
@@ -103,24 +104,28 @@ export function VariantInputPanel({
 						style={{
 							fontFamily: "var(--font-ui-arabic)",
 							fontSize: "var(--text-sm)",
-							fontWeight: 600,
-							color: "var(--color-text-primary)",
+							fontWeight: "var(--weight-medium)",
+							color: "var(--color-text-secondary)",
 						}}
 					>
 						{variant.label}
 					</span>
 				</div>
-				{/* Remove button on the left (in RTL, "left" visually = end of row) */}
+				{/* Remove button */}
 				<button
 					type="button"
-					className="btn-secondary btn-sm"
 					onClick={onRemove}
 					style={{
 						fontFamily: "var(--font-ui-arabic)",
 						fontSize: "var(--text-xs)",
+						color: "var(--color-text-tertiary)",
+						background: "none",
+						border: "none",
+						cursor: "pointer",
+						padding: "var(--space-1) var(--space-2)",
 					}}
 				>
-					حذف
+					✕ حذف
 				</button>
 			</div>
 
@@ -148,6 +153,7 @@ export function VariantInputPanel({
 							resize: "vertical",
 							width: "100%",
 							boxSizing: "border-box",
+							minHeight: "160px",
 						}}
 					/>
 
@@ -164,18 +170,30 @@ export function VariantInputPanel({
 						</p>
 					)}
 
-					<div style={{ display: "flex", justifyContent: "flex-end" }}>
+					<div style={{ display: "flex", justifyContent: "flex-start" }}>
 						<button
 							type="button"
-							className="btn-secondary btn-sm"
 							onClick={handleSubmit}
 							disabled={isLoading || !localText.trim() || !apiKey}
 							style={{
 								fontFamily: "var(--font-ui-arabic)",
-								fontSize: "var(--text-sm)",
+								fontSize: "var(--text-xs)",
+								color:
+									isLoading || !localText.trim() || !apiKey
+										? "var(--color-text-tertiary)"
+										: variant.color,
+								background: "transparent",
+								border: `1px solid ${isLoading || !localText.trim() || !apiKey ? "var(--color-border-default)" : variant.color}`,
+								borderRadius: "var(--radius-md)",
+								padding: "var(--space-2) var(--space-3)",
+								cursor:
+									isLoading || !localText.trim() || !apiKey
+										? "not-allowed"
+										: "pointer",
+								opacity: isLoading || !localText.trim() || !apiKey ? 0.5 : 1,
 							}}
 						>
-							{isLoading ? "جارٍ التحليل…" : "تحليل"}
+							{isLoading ? "جارٍ التحليل…" : "تحليل هذه النسخة"}
 						</button>
 					</div>
 				</div>

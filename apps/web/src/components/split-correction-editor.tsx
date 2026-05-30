@@ -133,10 +133,8 @@ export function SplitCorrectionEditor({
 		<div
 			style={{
 				borderTop: "1px solid var(--color-border-subtle)",
-				padding: "var(--space-5)",
 				display: "flex",
 				flexDirection: "column",
-				gap: "var(--space-4)",
 			}}
 		>
 			{/* Header row */}
@@ -146,6 +144,8 @@ export function SplitCorrectionEditor({
 					alignItems: "center",
 					justifyContent: "space-between",
 					direction: "rtl",
+					padding: "var(--space-3) var(--space-5)",
+					background: "var(--color-surface)",
 				}}
 			>
 				<span
@@ -184,6 +184,7 @@ export function SplitCorrectionEditor({
 					textAlign: "right",
 					cursor: isDragging ? "col-resize" : "pointer",
 					userSelect: "none",
+					margin: "0 var(--space-5)",
 					padding: "var(--space-4)",
 					background: "var(--color-surface-sunken)",
 					borderRadius: "var(--radius-lg)",
@@ -226,6 +227,7 @@ export function SplitCorrectionEditor({
 					gap: "var(--space-4)",
 					direction: "rtl",
 					alignItems: "center",
+					padding: "0 var(--space-5) var(--space-3)",
 				}}
 			>
 				<span
@@ -281,7 +283,8 @@ export function SplitCorrectionEditor({
 					gap: "var(--space-2)",
 					direction: "rtl",
 					borderTop: "1px solid var(--color-border-subtle)",
-					paddingTop: "var(--space-4)",
+					padding: "var(--space-3) var(--space-5)",
+					background: "var(--color-surface)",
 				}}
 			>
 				<button

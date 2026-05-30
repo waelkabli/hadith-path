@@ -78,6 +78,8 @@ export function buildVariantGraph(
 					position: narrator.position,
 					matchState: newState,
 					reliabilityGrade: record?.reliabilityGrade ?? null,
+					nameTransliterated: record?.nameTransliterated ?? null,
+					deathYear: record?.deathYear ?? null,
 				});
 			} else {
 				// Merge matchState: higher priority wins

@@ -22,151 +22,268 @@ import { buildVariantGraph } from "@/lib/variant-graph";
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 
-const NODE_WIDTH = 152;
-const NODE_HEIGHT = 60;
+const NODE_WIDTH = 160;
+const NODE_HEIGHT = 141;
 
-// ── Reliability grade → color ─────────────────────────────────────────────────
+// ── Grade → visual tokens ─────────────────────────────────────────────────────
 
-const GRADE_COLOR: Record<string, string> = {
-	ثقة: "#16a34a",
-	صدوق: "#84cc16",
-	ضعيف: "#f97316",
-	متروك: "#dc2626",
+type GradeTokens = {
+	topBorder: string;
+	badgeBg: string;
+	badgeBorder: string;
+	badgeText: string;
 };
 
-function gradeColor(grade: string | null): string {
-	if (!grade) return "#9ca3af";
-	return GRADE_COLOR[grade] ?? "#9ca3af";
-}
+const GRADE_TOKENS: Record<string, GradeTokens> = {
+	ثقة: {
+		topBorder: "#1d8a80",
+		badgeBg: "#eef9f8",
+		badgeBorder: "#9fddd8",
+		badgeText: "#1d8a80",
+	},
+	صدوق: {
+		topBorder: "#2878c8",
+		badgeBg: "#eef6fe",
+		badgeBorder: "#93c8f5",
+		badgeText: "#1a4e7a",
+	},
+	ضعيف: {
+		topBorder: "#d4900a",
+		badgeBg: "#fef6e6",
+		badgeBorder: "#f0c060",
+		badgeText: "#8a5a00",
+	},
+	متروك: {
+		topBorder: "#cc2828",
+		badgeBg: "#fef0f0",
+		badgeBorder: "#f0a0a0",
+		badgeText: "#8a1515",
+	},
+};
 
-// ── Match state → border color ────────────────────────────────────────────────
+const GRADE_UNKNOWN_TOKENS: GradeTokens = {
+	topBorder: "#b5b1a8",
+	badgeBg: "#f3f2ef",
+	badgeBorder: "#d8d5ce",
+	badgeText: "#625e56",
+};
+
+function gradeTokens(grade: string | null): GradeTokens {
+	if (!grade) return GRADE_UNKNOWN_TOKENS;
+	return GRADE_TOKENS[grade] ?? GRADE_UNKNOWN_TOKENS;
+}
 
 function stateBorderColor(state: MatchState): string {
 	switch (state) {
 		case "confirmed":
-			return "#16a34a";
+			return "#2aa57a";
 		case "flagged":
-			return "#d97706";
+			return "#d4900a";
 		case "unknown":
-			return "#d1d5db";
+			return "#b5b1a8";
 		default:
-			return "#e5e7eb";
+			return "#d8d5ce";
 	}
 }
 
-// ── Custom narrator node (duplicated from isnad-chain-view.tsx) ───────────────
+function stateBackground(state: MatchState): string {
+	return state === "unknown" ? "#f3f2ef" : "#ffffff";
+}
+
+// ── Custom narrator node — same pill shape as IsnadChainView ──────────────────
 
 type NarratorNodeData = {
 	label: string;
 	matchState: MatchState;
 	reliabilityGrade: string | null;
+	nameTranslit: string | null;
+	deathYear: number | null;
+	isTerminal?: boolean;
+	uniqueVariantColor: string | null;
 };
 
 type NarratorNodeType = Node<NarratorNodeData>;
 
 function NarratorNodeComponent({ data }: NodeProps<NarratorNodeType>) {
-	const { label, matchState, reliabilityGrade } = data;
+	const {
+		label,
+		matchState,
+		reliabilityGrade,
+		nameTranslit,
+		deathYear,
+		isTerminal,
+		uniqueVariantColor,
+	} = data;
 	const isUnknown = matchState === "unknown";
+	const tokens = gradeTokens(reliabilityGrade);
+
+	// Unique-to-variant nodes get the variant color border; terminals get gold
+	const borderColor = isTerminal
+		? "#e2bc50"
+		: (uniqueVariantColor ?? stateBorderColor(matchState));
+	const topBorder = isTerminal ? "#e2bc50" : tokens.topBorder;
+	const bg = isTerminal ? "#fdf8ec" : stateBackground(matchState);
+	const nameColor = isTerminal ? "#7a5512" : isUnknown ? "#9c9890" : "#1c1a17";
 
 	return (
 		<div
 			style={{
 				width: NODE_WIDTH,
-				height: NODE_HEIGHT,
-				background: isUnknown ? "#f9fafb" : "#ffffff",
-				border: `2px solid ${stateBorderColor(matchState)}`,
-				borderRadius: 8,
-				padding: "0 10px",
+				minHeight: NODE_HEIGHT,
+				background: bg,
+				border: `1.5px solid ${borderColor}`,
+				borderTop: `3px solid ${topBorder}`,
+				borderRadius: 24,
 				boxSizing: "border-box",
 				display: "flex",
+				flexDirection: "column",
 				alignItems: "center",
-				direction: "rtl",
+				justifyContent: "center",
 				gap: 6,
+				padding: "14px 16px",
 				cursor: "pointer",
+				boxShadow: "0 1px 3px rgba(28,26,23,0.08)",
+				position: "relative",
+				overflow: "visible",
 			}}
 		>
-			{/* Receives edges from the right (earlier narrator) */}
 			<Handle
 				type="target"
 				position={Position.Right}
-				style={{ background: "#d1d5db", width: 8, height: 8, border: "none" }}
-			/>
-
-			{/* Reliability grade dot */}
-			<div
 				style={{
+					background: "#b5b1a8",
 					width: 8,
 					height: 8,
+					border: "none",
 					borderRadius: "50%",
-					background: gradeColor(reliabilityGrade),
-					flexShrink: 0,
 				}}
 			/>
+
+			{/* State icon overlay */}
+			{matchState === "confirmed" && (
+				<div style={{ position: "absolute", top: 5, right: 5 }}>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 14 14"
+						fill="none"
+						aria-label="مؤكد"
+					>
+						<circle cx="7" cy="7" r="6.5" fill="#2aa57a" />
+						<path
+							d="M4 7l2 2 4-4"
+							stroke="#fff"
+							strokeWidth="1.5"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						/>
+					</svg>
+				</div>
+			)}
+			{matchState === "flagged" && (
+				<div style={{ position: "absolute", top: 5, right: 5 }}>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 14 14"
+						fill="none"
+						aria-label="غير محدد"
+					>
+						<path d="M7 1.5L12.5 11H1.5L7 1.5Z" fill="#d4900a" />
+						<path
+							d="M7 5.5V8M7 9.5H7.01"
+							stroke="#fff"
+							strokeWidth="1.2"
+							strokeLinecap="round"
+						/>
+					</svg>
+				</div>
+			)}
 
 			{/* Arabic name */}
 			<span
 				style={{
-					fontFamily: "var(--font-display-arabic)",
-					fontSize: 13,
-					color: isUnknown ? "#9ca3af" : "#111827",
-					flex: 1,
+					fontFamily: "var(--font-ui-arabic)",
+					fontSize: 17,
+					fontWeight: 600,
+					color: nameColor,
+					textAlign: "center",
+					direction: "rtl",
+					lineHeight: 1.4,
+					maxWidth: "100%",
 					overflow: "hidden",
 					textOverflow: "ellipsis",
 					whiteSpace: "nowrap",
-					lineHeight: 1.4,
 				}}
 			>
-				{isUnknown ? "؟" : label}
+				{isUnknown ? "راوٍ غير معروف" : label}
 			</span>
 
-			{/* State icon */}
-			{matchState === "confirmed" && (
-				<svg
-					width="12"
-					height="12"
-					viewBox="0 0 12 12"
-					fill="none"
-					aria-label="مؤكد"
-					style={{ flexShrink: 0 }}
+			{/* Latin transliteration */}
+			{nameTranslit && !isUnknown && (
+				<span
+					style={{
+						fontFamily: "var(--font-ui-latin)",
+						fontSize: 12,
+						color: "#625e56",
+						textAlign: "center",
+						direction: "ltr",
+						lineHeight: 1.3,
+						maxWidth: "100%",
+						overflow: "hidden",
+						textOverflow: "ellipsis",
+						whiteSpace: "nowrap",
+					}}
 				>
-					<path
-						d="M2 6l3 3 5-5"
-						stroke="#16a34a"
-						strokeWidth="1.5"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					/>
-				</svg>
-			)}
-			{matchState === "flagged" && (
-				<svg
-					width="12"
-					height="12"
-					viewBox="0 0 12 12"
-					fill="none"
-					aria-label="غير محدد"
-					style={{ flexShrink: 0 }}
-				>
-					<path
-						d="M6 1.5L11 10H1L6 1.5Z"
-						stroke="#d97706"
-						strokeWidth="1.2"
-						strokeLinejoin="round"
-					/>
-					<path
-						d="M6 4.5V7M6 8.5H6.01"
-						stroke="#d97706"
-						strokeWidth="1.2"
-						strokeLinecap="round"
-					/>
-				</svg>
+					{nameTranslit}
+				</span>
 			)}
 
-			{/* Sends edges to the left (later narrator) */}
+			{/* Death year */}
+			{deathYear != null && !isUnknown && (
+				<span
+					style={{
+						fontFamily: "var(--font-mono)",
+						fontSize: 11,
+						color: "#9c9890",
+						textAlign: "center",
+						direction: "ltr",
+					}}
+				>
+					{`ت. ${deathYear} هـ`}
+				</span>
+			)}
+
+			{/* Grade badge */}
+			{!isUnknown && (
+				<span
+					style={{
+						fontFamily: "var(--font-ui-arabic)",
+						fontSize: 11,
+						fontWeight: 500,
+						background: isTerminal ? "#fdf8ec" : tokens.badgeBg,
+						border: `1px solid ${isTerminal ? "#e2bc50" : tokens.badgeBorder}`,
+						color: isTerminal ? "#7a5512" : tokens.badgeText,
+						borderRadius: 4,
+						padding: "2px 8px",
+						lineHeight: 1.5,
+						direction: "rtl",
+					}}
+				>
+					{reliabilityGrade ?? "مجهول"}
+				</span>
+			)}
+
 			<Handle
 				type="source"
 				position={Position.Left}
-				style={{ background: "#d1d5db", width: 8, height: 8, border: "none" }}
+				style={{
+					background: "#b5b1a8",
+					width: 8,
+					height: 8,
+					border: "none",
+					borderRadius: "50%",
+				}}
 			/>
 		</div>
 	);
@@ -175,10 +292,6 @@ function NarratorNodeComponent({ data }: NodeProps<NarratorNodeType>) {
 const nodeTypes = { narratorNode: NarratorNodeComponent };
 
 // ── Dagre layout ──────────────────────────────────────────────────────────────
-//
-// Same reversal technique as isnad-chain-view.tsx: reverse edges in dagre so
-// the last-mentioned narrator (Companion/Prophet) ends up on the right.
-// For reactflow edges, keep all variant-colored edges (one per variant per pair).
 
 function buildVariantLayout(
 	graphNodes: {
@@ -186,6 +299,8 @@ function buildVariantLayout(
 		extractedName: string;
 		matchState: MatchState;
 		reliabilityGrade: string | null;
+		nameTransliterated: string | null;
+		deathYear: number | null;
 	}[],
 	graphEdges: {
 		source: string;
@@ -193,6 +308,7 @@ function buildVariantLayout(
 		variantId: string;
 		color: string;
 	}[],
+	variantColorMap: Map<string, string>,
 ): { rfNodes: Node<NarratorNodeData>[]; rfEdges: Edge[] } {
 	const g = new dagre.graphlib.Graph();
 	g.setDefaultEdgeLabel(() => ({}));
@@ -202,21 +318,36 @@ function buildVariantLayout(
 		g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
 	}
 
-	// Deduplicate edges for dagre by (source, target) pair — dagre only needs structure
+	// Compute which nodes belong to which variants (for unique-variant coloring)
+	const nodeVariants = new Map<string, Set<string>>();
+	for (const edge of graphEdges) {
+		if (!nodeVariants.has(edge.source))
+			nodeVariants.set(edge.source, new Set());
+		if (!nodeVariants.has(edge.target))
+			nodeVariants.set(edge.target, new Set());
+		nodeVariants.get(edge.source)?.add(edge.variantId);
+		nodeVariants.get(edge.target)?.add(edge.variantId);
+	}
+
+	// Deduplicate edges for dagre layout
 	const seenDagreEdges = new Set<string>();
 	for (const edge of graphEdges) {
 		const key = `${edge.source}||${edge.target}`;
 		if (!seenDagreEdges.has(key)) {
 			seenDagreEdges.add(key);
-			// Reversed: last-mentioned (Companion) becomes dagre source → placed right
 			g.setEdge(edge.target, edge.source);
 		}
 	}
-
 	dagre.layout(g);
 
 	const rfNodes: Node<NarratorNodeData>[] = graphNodes.map((n) => {
 		const pos = g.node(n.id);
+		const variantSet = nodeVariants.get(n.id);
+		const uniqueVariantColor =
+			variantSet?.size === 1
+				? (variantColorMap.get([...variantSet][0]) ?? null)
+				: null;
+
 		return {
 			id: n.id,
 			type: "narratorNode",
@@ -225,12 +356,15 @@ function buildVariantLayout(
 				label: n.extractedName,
 				matchState: n.matchState,
 				reliabilityGrade: n.reliabilityGrade,
+				nameTranslit: n.nameTransliterated,
+				deathYear: n.deathYear,
+				isTerminal: false,
+				uniqueVariantColor,
 			},
 		};
 	});
 
-	// Keep ALL edges (one per variant per edge pair), each with variant color.
-	// Reversed: arrows flow from Companion (right) to collector (left).
+	// Keep all variant-colored edges (reversed: Companion → collector)
 	const rfEdges: Edge[] = graphEdges.map((e, i) => ({
 		id: `e-${i}-${e.variantId}`,
 		source: e.target,
@@ -259,6 +393,7 @@ export function VariantChainView({
 	onInit,
 }: VariantChainViewProps) {
 	const { rfNodes, rfEdges } = useMemo(() => {
+		const variantColorMap = new Map(variants.map((v) => [v.id, v.color]));
 		const variantInputs = variants.map((v) => ({
 			id: v.id,
 			color: v.color,
@@ -273,7 +408,7 @@ export function VariantChainView({
 			})),
 		}));
 		const graph = buildVariantGraph(variantInputs, records);
-		return buildVariantLayout(graph.nodes, graph.edges);
+		return buildVariantLayout(graph.nodes, graph.edges, variantColorMap);
 	}, [variants, records]);
 
 	return (
@@ -305,19 +440,19 @@ export function VariantChainView({
 				<Controls />
 			</ReactFlow>
 
-			{/* Legend: top-right overlay */}
+			{/* Variant legend — top-right overlay */}
 			<div
 				style={{
 					position: "absolute",
-					top: 8,
-					right: 8,
+					top: 12,
+					right: 12,
 					background: "rgba(255,255,255,0.92)",
 					border: "1px solid var(--color-border-subtle)",
 					borderRadius: "var(--radius-sm)",
-					padding: "var(--space-2) var(--space-3)",
+					padding: "8px 12px",
 					display: "flex",
 					flexDirection: "column",
-					gap: "var(--space-1)",
+					gap: 4,
 					zIndex: 10,
 					direction: "rtl",
 					pointerEvents: "none",
@@ -329,7 +464,7 @@ export function VariantChainView({
 						style={{
 							display: "flex",
 							alignItems: "center",
-							gap: "var(--space-2)",
+							gap: 6,
 						}}
 					>
 						<div

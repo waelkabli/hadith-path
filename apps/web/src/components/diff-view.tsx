@@ -260,17 +260,6 @@ export function DiffView({ variants }: DiffViewProps) {
 		}
 	});
 
-	const toggleLayout = () => {
-		const next: "inline" | "sidebyside" =
-			layout === "inline" ? "sidebyside" : "inline";
-		setLayout(next);
-		try {
-			sessionStorage.setItem(DIFF_LAYOUT_KEY, next);
-		} catch {
-			// ignore
-		}
-	};
-
 	const analyzed = variants.filter((v) => getMatn(v).trim() !== "");
 
 	if (analyzed.length < 2) {
@@ -303,38 +292,58 @@ export function DiffView({ variants }: DiffViewProps) {
 			}}
 		>
 			{/* Layout toggle */}
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "flex-end",
-					direction: "rtl",
-					gap: "var(--space-2)",
-				}}
-			>
-				<button
-					type="button"
+			<div style={{ display: "flex", justifyContent: "flex-end" }}>
+				<div
 					style={{
 						display: "inline-flex",
-						alignItems: "center",
-						gap: "var(--space-1)",
-						padding: "var(--space-1) var(--space-3)",
-						background:
-							layout === "inline"
-								? "var(--color-surface-sunken)"
-								: "transparent",
-						color: "var(--color-text-secondary)",
+						background: "var(--color-surface-sunken)",
 						border: "1px solid var(--color-border-default)",
 						borderRadius: "var(--radius-md)",
-						fontFamily: "var(--font-ui-arabic)",
-						fontSize: "var(--text-xs)",
-						cursor: "pointer",
-						lineHeight: 1,
+						overflow: "hidden",
 					}}
-					onClick={toggleLayout}
-					aria-label={layout === "inline" ? "عرض جنباً إلى جنب" : "عرض متحد"}
 				>
-					{layout === "inline" ? "جنباً إلى جنب" : "متحد"}
-				</button>
+					{(
+						[
+							{ id: "inline", label: "Unified" },
+							{ id: "sidebyside", label: "Split" },
+						] as const
+					).map((opt) => (
+						<button
+							key={opt.id}
+							type="button"
+							onClick={() => {
+								setLayout(opt.id);
+								try {
+									sessionStorage.setItem(DIFF_LAYOUT_KEY, opt.id);
+								} catch {
+									// ignore
+								}
+							}}
+							style={{
+								padding: "var(--space-2) var(--space-3)",
+								background:
+									layout === opt.id ? "var(--color-surface)" : "transparent",
+								color:
+									layout === opt.id
+										? "var(--color-text-primary)"
+										: "var(--color-text-secondary)",
+								border: "none",
+								fontFamily: "var(--font-ui)",
+								fontSize: "var(--text-xs)",
+								fontWeight:
+									layout === opt.id
+										? "var(--weight-medium)"
+										: "var(--weight-regular)",
+								cursor: "pointer",
+								lineHeight: 1,
+								boxShadow:
+									layout === opt.id ? "0 1px 2px rgba(28,26,23,0.08)" : "none",
+							}}
+						>
+							{opt.label}
+						</button>
+					))}
+				</div>
 			</div>
 
 			{layout === "inline" ? (

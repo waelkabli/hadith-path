@@ -73,13 +73,13 @@ describe("IsnadChainView", () => {
 		expect(screen.getByText("ابن عمر")).toBeDefined();
 	});
 
-	it("shows ؟ for an unknown narrator (userOverride: true, selectedId: null)", () => {
+	it("shows a placeholder label for an unknown narrator (userOverride: true, selectedId: null)", () => {
 		const withUnknown = [
 			narratorMatch(0, "مالك بن أنس", "malik-ibn-anas"),
 			narratorMatch(1, "راوٍ مجهول", null, true), // unknown
 		];
 		render(<IsnadChainView narrators={withUnknown} records={RECORDS} />);
-		expect(screen.getByText("؟")).toBeDefined();
+		expect(screen.getByText("راوٍ غير معروف")).toBeDefined();
 	});
 
 	it("calls onNodeClick with the narrator's record ID when a known narrator node is clicked", () => {
@@ -115,7 +115,7 @@ describe("IsnadChainView", () => {
 				}}
 			/>,
 		);
-		fireEvent.click(screen.getByText("؟"));
+		fireEvent.click(screen.getByText("راوٍ غير معروف"));
 		expect(clicked).toBeNull();
 	});
 });

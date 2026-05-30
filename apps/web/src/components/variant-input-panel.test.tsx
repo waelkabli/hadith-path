@@ -128,7 +128,7 @@ describe("VariantInputPanel", () => {
 				}}
 			/>,
 		);
-		fireEvent.click(screen.getByRole("button", { name: "حذف" }));
+		fireEvent.click(screen.getByRole("button", { name: "✕ حذف" }));
 		expect(removed).toBe(true);
 	});
 });

@@ -101,7 +101,7 @@ describe("VariantChainView", () => {
 		expect(screen.getByText("أيوب السختياني")).toBeDefined();
 	});
 
-	it("shows '؟' for unknown narrator nodes", () => {
+	it("shows a placeholder label for unknown narrator nodes", () => {
 		const variantWithUnknown = makeVariant(
 			"v-unknown",
 			"النسخة 1",
@@ -118,7 +118,7 @@ describe("VariantChainView", () => {
 				onNodeClick={() => {}}
 			/>,
 		);
-		expect(screen.getByText("؟")).toBeDefined();
+		expect(screen.getByText("راوٍ غير معروف")).toBeDefined();
 	});
 
 	it("calls onNodeClick with the correct ID when a known node is clicked", () => {
@@ -156,7 +156,7 @@ describe("VariantChainView", () => {
 				}}
 			/>,
 		);
-		fireEvent.click(screen.getByText("؟"));
+		fireEvent.click(screen.getByText("راوٍ غير معروف"));
 		expect(clicked).toBeNull();
 	});
 

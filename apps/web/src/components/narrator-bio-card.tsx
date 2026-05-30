@@ -1,10 +1,13 @@
 import type { NarratorRecord } from "@/lib/narrator-database";
 
-const GRADE_COLOR: Record<string, string> = {
-	ثقة: "#16a34a",
-	صدوق: "#84cc16",
-	ضعيف: "#f97316",
-	متروك: "#dc2626",
+const GRADE_TOKENS: Record<
+	string,
+	{ bg: string; border: string; text: string }
+> = {
+	ثقة: { bg: "#eef9f8", border: "#9fddd8", text: "#1d8a80" },
+	صدوق: { bg: "#eef6fe", border: "#93c8f5", text: "#1a4e7a" },
+	ضعيف: { bg: "#fef6e6", border: "#f0c060", text: "#8a5a00" },
+	متروك: { bg: "#fef0f0", border: "#f0a0a0", text: "#8a1515" },
 };
 
 const GENERATION_LABEL: Record<string, string> = {
@@ -30,188 +33,241 @@ export function NarratorBioCard({
 	onClose,
 }: NarratorBioCardProps) {
 	return (
-		<div
-			style={{
-				width: 280,
-				flexShrink: 0,
-				borderLeft: "1px solid var(--color-border-subtle)",
-				display: "flex",
-				flexDirection: "column",
-				direction: "rtl",
-				background: "var(--color-surface)",
-				overflow: "hidden",
-			}}
-		>
-			{/* Header */}
+		<>
+			{/* Backdrop */}
 			<div
 				style={{
-					display: "flex",
-					alignItems: "flex-start",
-					justifyContent: "space-between",
-					padding: "var(--space-3) var(--space-4)",
-					borderBottom: "1px solid var(--color-border-subtle)",
-					gap: "var(--space-2)",
-					flexShrink: 0,
+					position: "fixed",
+					inset: 0,
+					background: "rgba(28,26,23,0.50)",
+					zIndex: 49,
 				}}
-			>
-				<div style={{ minWidth: 0 }}>
-					<p
-						style={{
-							fontFamily: "var(--font-display-arabic)",
-							fontSize: "var(--text-base)",
-							fontWeight: "var(--weight-medium)",
-							color: "var(--color-text-primary)",
-							margin: 0,
-							lineHeight: 1.5,
-						}}
-					>
-						{record ? record.nameArabic : "راوٍ غير معروف"}
-					</p>
-					{record && (
-						<p
-							style={{
-								fontFamily: "var(--font-ui)",
-								fontSize: "var(--text-xs)",
-								color: "var(--color-text-tertiary)",
-								margin: 0,
-								marginTop: 2,
-								direction: "ltr",
-								textAlign: "right",
-							}}
-						>
-							{record.nameTransliterated}
-						</p>
-					)}
-				</div>
-				<button
-					type="button"
-					onClick={onClose}
-					aria-label="إغلاق"
-					style={{
-						background: "none",
-						border: "none",
-						cursor: "pointer",
-						color: "var(--color-text-tertiary)",
-						padding: 2,
-						flexShrink: 0,
-						lineHeight: 1,
-					}}
-				>
-					<svg
-						width="14"
-						height="14"
-						viewBox="0 0 14 14"
-						fill="none"
-						aria-hidden="true"
-					>
-						<path
-							d="M2 2l10 10M12 2L2 12"
-							stroke="currentColor"
-							strokeWidth="1.5"
-							strokeLinecap="round"
-						/>
-					</svg>
-				</button>
-			</div>
+				onClick={onClose}
+				aria-hidden="true"
+			/>
 
-			{/* Body */}
+			{/* Drawer */}
 			<div
 				style={{
-					flex: 1,
-					overflowY: "auto",
-					padding: "var(--space-3) var(--space-4)",
+					position: "fixed",
+					right: 0,
+					top: "3.5rem",
+					width: 400,
+					height: "calc(100vh - 3.5rem)",
+					background: "var(--color-surface)",
+					borderLeft: "1px solid var(--color-border-default)",
+					boxShadow:
+						"0 20px 48px rgba(28,26,23,0.18), 0 6px 16px rgba(28,26,23,0.10)",
 					display: "flex",
 					flexDirection: "column",
-					gap: "var(--space-3)",
+					direction: "rtl",
+					zIndex: 50,
+					overflow: "hidden",
 				}}
 			>
-				{!record ? (
-					<p
+				{/* Header */}
+				<div
+					style={{
+						display: "flex",
+						alignItems: "flex-start",
+						justifyContent: "space-between",
+						padding: "20px 24px",
+						borderBottom: "1px solid var(--color-border-subtle)",
+						gap: "var(--space-3)",
+						flexShrink: 0,
+					}}
+				>
+					<div style={{ minWidth: 0 }}>
+						<p
+							style={{
+								fontFamily: "var(--font-display-arabic)",
+								fontSize: "var(--text-2xl, 1.5rem)",
+								fontWeight: "700",
+								color: "var(--color-text-primary)",
+								margin: 0,
+								lineHeight: 1.35,
+								direction: "rtl",
+							}}
+						>
+							{record ? record.nameArabic : "راوٍ غير معروف"}
+						</p>
+						{record && (
+							<p
+								style={{
+									fontFamily: "var(--font-ui)",
+									fontSize: "var(--text-sm)",
+									color: "var(--color-text-secondary)",
+									margin: "4px 0 0",
+									direction: "ltr",
+									textAlign: "right",
+								}}
+							>
+								{record.nameTransliterated}
+							</p>
+						)}
+					</div>
+					<button
+						type="button"
+						onClick={onClose}
+						aria-label="إغلاق"
 						style={{
-							fontFamily: "var(--font-ui-arabic)",
-							fontSize: "var(--text-sm)",
-							color: "var(--color-text-secondary)",
-							margin: 0,
-							textAlign: "center",
+							background: "none",
+							border: "none",
+							cursor: "pointer",
+							color: "var(--color-text-tertiary)",
+							padding: 4,
+							flexShrink: 0,
+							lineHeight: 1,
+							borderRadius: "var(--radius-md)",
+							width: 28,
+							height: 28,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
 						}}
 					>
-						لا توجد بيانات لهذا الراوي
-					</p>
-				) : (
-					<>
-						{/* Dates + generation */}
-						<Section>
-							{(record.deathYear !== null || record.birthYear !== null) && (
-								<Field
-									label="الوفاة"
-									value={
-										record.deathYear !== null
-											? `${record.deathYear} هـ`
-											: "غير معروف"
-									}
-								/>
-							)}
-							<Field
-								label="الطبقة"
-								value={GENERATION_LABEL[record.generation] ?? record.generation}
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 16 16"
+							fill="none"
+							aria-hidden="true"
+						>
+							<path
+								d="M2 2l12 12M14 2L2 14"
+								stroke="currentColor"
+								strokeWidth="1.5"
+								strokeLinecap="round"
 							/>
-							<ReliabilityField grade={record.reliabilityGrade} />
-						</Section>
+						</svg>
+					</button>
+				</div>
 
-						{/* Teachers */}
-						{record.teachers.length > 0 && (
-							<Section label="المشايخ">
-								<NameList ids={record.teachers} allRecords={allRecords} />
-							</Section>
-						)}
-
-						{/* Students */}
-						{record.students.length > 0 && (
-							<Section label="التلاميذ">
-								<NameList ids={record.students} allRecords={allRecords} />
-							</Section>
-						)}
-
-						{/* Collections */}
-						{record.collections.length > 0 && (
-							<Section label="المصادر">
-								<p
+				{/* Body */}
+				<div
+					style={{
+						flex: 1,
+						overflowY: "auto",
+						padding: "20px 24px",
+						display: "flex",
+						flexDirection: "column",
+						gap: "var(--space-5)",
+					}}
+				>
+					{!record ? (
+						<p
+							style={{
+								fontFamily: "var(--font-ui-arabic)",
+								fontSize: "var(--text-sm)",
+								color: "var(--color-text-secondary)",
+								margin: "40px 0",
+								textAlign: "center",
+							}}
+						>
+							لا توجد بيانات لهذا الراوي
+						</p>
+					) : (
+						<>
+							{/* Section 1 — Metadata grid */}
+							<Section>
+								<div
 									style={{
-										margin: 0,
-										fontFamily: "var(--font-ui)",
-										fontSize: "var(--text-xs)",
-										color: "var(--color-text-secondary)",
-										direction: "ltr",
-										textAlign: "right",
+										display: "grid",
+										gridTemplateColumns: "1fr 1fr",
+										gap: "var(--space-3)",
 									}}
 								>
-									{record.collections.join("، ")}
-								</p>
+									{(record.deathYear !== null || record.birthYear !== null) && (
+										<MetaItem
+											label="وفاة"
+											value={
+												record.deathYear !== null
+													? `${record.deathYear} هـ`
+													: "غير معروف"
+											}
+										/>
+									)}
+									<MetaItem
+										label="طبقة"
+										value={
+											GENERATION_LABEL[record.generation] ?? record.generation
+										}
+									/>
+									<div>
+										<span
+											style={{
+												display: "block",
+												fontFamily: "var(--font-ui-arabic)",
+												fontSize: "var(--text-2xs, 0.6875rem)",
+												fontWeight: "var(--weight-medium)",
+												color: "var(--color-text-tertiary)",
+												letterSpacing: "0.06em",
+												marginBottom: 4,
+												direction: "rtl",
+											}}
+										>
+											حكم
+										</span>
+										<ReliabilityBadge grade={record.reliabilityGrade} />
+									</div>
+								</div>
 							</Section>
-						)}
 
-						{/* Bio note */}
-						{record.bioNote && (
-							<Section label="ترجمة">
-								<p
-									style={{
-										margin: 0,
-										fontFamily: "var(--font-ui)",
-										fontSize: "var(--text-xs)",
-										color: "var(--color-text-secondary)",
-										lineHeight: 1.6,
-										direction: "ltr",
-										textAlign: "right",
-									}}
-								>
-									{record.bioNote}
-								</p>
-							</Section>
-						)}
-					</>
-				)}
+							{/* Section 2 — Teachers */}
+							{record.teachers.length > 0 && (
+								<Section label="المشايخ">
+									<NameList ids={record.teachers} allRecords={allRecords} />
+								</Section>
+							)}
+
+							{/* Section 3 — Students */}
+							{record.students.length > 0 && (
+								<Section label="التلاميذ">
+									<NameList ids={record.students} allRecords={allRecords} />
+								</Section>
+							)}
+
+							{/* Section 4 — Collections */}
+							{record.collections.length > 0 && (
+								<Section label="المصادر">
+									<p
+										style={{
+											margin: 0,
+											fontFamily: "var(--font-ui)",
+											fontSize: "var(--text-xs)",
+											color: "var(--color-text-secondary)",
+											direction: "ltr",
+											textAlign: "right",
+										}}
+									>
+										{record.collections.join("، ")}
+									</p>
+								</Section>
+							)}
+
+							{/* Section 5 — Biography */}
+							{record.bioNote && (
+								<Section label="ترجمة">
+									<p
+										style={{
+											margin: 0,
+											fontFamily: "var(--font-ui)",
+											fontSize: "var(--text-xs)",
+											color: "var(--color-text-secondary)",
+											lineHeight: 1.6,
+											direction: "ltr",
+											textAlign: "right",
+										}}
+									>
+										{record.bioNote}
+									</p>
+								</Section>
+							)}
+						</>
+					)}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }
 
@@ -225,7 +281,7 @@ function Section({
 	children: React.ReactNode;
 }) {
 	return (
-		<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+		<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 			{label && (
 				<span
 					style={{
@@ -234,6 +290,7 @@ function Section({
 						fontWeight: "var(--weight-medium)",
 						color: "var(--color-text-tertiary)",
 						letterSpacing: "0.05em",
+						direction: "rtl",
 					}}
 				>
 					{label}
@@ -244,24 +301,27 @@ function Section({
 	);
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function MetaItem({ label, value }: { label: string; value: string }) {
 	return (
-		<div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+		<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
 			<span
 				style={{
 					fontFamily: "var(--font-ui-arabic)",
-					fontSize: "var(--text-xs)",
+					fontSize: "var(--text-2xs, 0.6875rem)",
+					fontWeight: "var(--weight-medium)",
 					color: "var(--color-text-tertiary)",
-					flexShrink: 0,
+					letterSpacing: "0.06em",
+					direction: "rtl",
 				}}
 			>
-				{label}:
+				{label}
 			</span>
 			<span
 				style={{
-					fontFamily: "var(--font-ui-arabic)",
-					fontSize: "var(--text-xs)",
-					color: "var(--color-text-secondary)",
+					fontFamily: "var(--font-display-arabic)",
+					fontSize: "var(--text-sm)",
+					color: "var(--color-text-primary)",
+					direction: "rtl",
 				}}
 			>
 				{value}
@@ -270,34 +330,30 @@ function Field({ label, value }: { label: string; value: string }) {
 	);
 }
 
-function ReliabilityField({ grade }: { grade: string }) {
-	const color = GRADE_COLOR[grade] ?? "#9ca3af";
+function ReliabilityBadge({ grade }: { grade: string }) {
+	const tokens = GRADE_TOKENS[grade] ?? {
+		bg: "#f3f2ef",
+		border: "#d8d5ce",
+		text: "#625e56",
+	};
 	return (
-		<div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-			<span
-				style={{
-					fontFamily: "var(--font-ui-arabic)",
-					fontSize: "var(--text-xs)",
-					color: "var(--color-text-tertiary)",
-					flexShrink: 0,
-				}}
-			>
-				الحكم:
-			</span>
-			<span
-				style={{
-					fontFamily: "var(--font-ui-arabic)",
-					fontSize: "var(--text-xs)",
-					fontWeight: "var(--weight-medium)",
-					color,
-					background: `${color}18`,
-					borderRadius: "var(--radius-full, 9999px)",
-					padding: "1px 6px",
-				}}
-			>
-				{grade}
-			</span>
-		</div>
+		<span
+			style={{
+				display: "inline-flex",
+				fontFamily: "var(--font-ui-arabic)",
+				fontSize: "var(--text-2xs, 0.6875rem)",
+				fontWeight: "var(--weight-medium)",
+				background: tokens.bg,
+				border: `1px solid ${tokens.border}`,
+				color: tokens.text,
+				borderRadius: "var(--radius-sm)",
+				padding: "2px 8px",
+				direction: "rtl",
+				whiteSpace: "nowrap",
+			}}
+		>
+			{grade}
+		</span>
 	);
 }
 
@@ -316,7 +372,7 @@ function NameList({
 				listStyle: "none",
 				display: "flex",
 				flexDirection: "column",
-				gap: 2,
+				gap: 4,
 			}}
 		>
 			{ids.map((id) => {
@@ -329,6 +385,7 @@ function NameList({
 							display: "flex",
 							alignItems: "center",
 							gap: 6,
+							direction: "rtl",
 						}}
 					>
 						<span
@@ -342,10 +399,10 @@ function NameList({
 						</span>
 						<span
 							style={{
-								fontFamily: "var(--font-ui-arabic)",
-								fontSize: "var(--text-xs)",
+								fontFamily: "var(--font-display-arabic)",
+								fontSize: "var(--text-sm)",
 								color: resolved
-									? "var(--color-text-secondary)"
+									? "var(--color-text-primary)"
 									: "var(--color-text-tertiary)",
 								fontStyle: resolved ? "normal" : "italic",
 							}}

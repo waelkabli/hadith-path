@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 
+import { EXAMPLE_HADITH } from "@/constants/hadith-examples";
 import {
 	type UseHadithInputOptions,
 	useHadithInput,
@@ -20,6 +21,8 @@ export function HadithInput({ onSubmit, onReset }: UseHadithInputOptions = {}) {
 					justifyContent: "space-between",
 					gap: "var(--space-4)",
 					padding: "var(--space-3) var(--space-5)",
+					height: "3rem",
+					borderBottom: "1px solid var(--color-border-subtle)",
 					direction: "rtl",
 				}}
 			>
@@ -39,8 +42,20 @@ export function HadithInput({ onSubmit, onReset }: UseHadithInputOptions = {}) {
 				</span>
 				<button
 					type="button"
-					className="btn-secondary btn-sm"
-					style={{ fontFamily: "var(--font-ui-arabic)", flexShrink: 0 }}
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						padding: "var(--space-2) var(--space-3)",
+						background: "var(--color-surface)",
+						color: "var(--color-gold-600)",
+						border: "1px solid var(--color-gold-300)",
+						borderRadius: "var(--radius-md)",
+						fontFamily: "var(--font-ui-arabic)",
+						fontSize: "var(--text-xs)",
+						cursor: "pointer",
+						flexShrink: 0,
+						whiteSpace: "nowrap",
+					}}
 					onClick={reset}
 				>
 					بدء من جديد
@@ -63,6 +78,7 @@ export function HadithInput({ onSubmit, onReset }: UseHadithInputOptions = {}) {
 				className="textarea-hadith"
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
+				placeholder="الصق نص الحديث هنا…"
 				dir="rtl"
 				rows={12}
 			/>
@@ -74,8 +90,8 @@ export function HadithInput({ onSubmit, onReset }: UseHadithInputOptions = {}) {
 			<div
 				style={{
 					display: "flex",
-					justifyContent: "flex-start",
 					gap: "var(--space-3)",
+					direction: "rtl",
 				}}
 			>
 				<button
@@ -91,6 +107,15 @@ export function HadithInput({ onSubmit, onReset }: UseHadithInputOptions = {}) {
 						</span>
 					)}
 					تحليل الحديث
+				</button>
+				<button
+					type="button"
+					className="btn-ghost btn-sm"
+					style={{ fontFamily: "var(--font-ui-arabic)" }}
+					onClick={() => onChange(EXAMPLE_HADITH)}
+					disabled={isLoading}
+				>
+					مثال
 				</button>
 			</div>
 		</div>

@@ -1,50 +1,121 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-
-import { orpc } from "@/utils/orpc";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
 	component: HomeComponent,
 });
 
-const TITLE_TEXT = `
- ██████╗ ███████╗████████╗████████╗███████╗██████╗
- ██╔══██╗██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
- ██████╔╝█████╗     ██║      ██║   █████╗  ██████╔╝
- ██╔══██╗██╔══╝     ██║      ██║   ██╔══╝  ██╔══██╗
- ██████╔╝███████╗   ██║      ██║   ███████╗██║  ██║
- ╚═════╝ ╚══════╝   ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
-
- ████████╗    ███████╗████████╗ █████╗  ██████╗██╗  ██╗
- ╚══██╔══╝    ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝
-    ██║       ███████╗   ██║   ███████║██║     █████╔╝
-    ██║       ╚════██║   ██║   ██╔══██║██║     ██╔═██╗
-    ██║       ███████║   ██║   ██║  ██║╚██████╗██║  ██╗
-    ╚═╝       ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- `;
-
 function HomeComponent() {
-	const healthCheck = useQuery(orpc.healthCheck.queryOptions());
+	const navigate = useNavigate();
 
 	return (
-		<div className="container mx-auto max-w-3xl px-4 py-2">
-			<pre className="overflow-x-auto font-mono text-sm">{TITLE_TEXT}</pre>
-			<div className="grid gap-6">
-				<section className="rounded-lg border p-4">
-					<h2 className="mb-2 font-medium">API Status</h2>
-					<div className="flex items-center gap-2">
-						<div
-							className={`h-2 w-2 rounded-full ${healthCheck.data ? "bg-green-500" : "bg-red-500"}`}
-						/>
-						<span className="text-muted-foreground text-sm">
-							{healthCheck.isLoading
-								? "Checking..."
-								: healthCheck.data
-									? "Connected"
-									: "Disconnected"}
-						</span>
-					</div>
-				</section>
+		<div
+			style={{
+				minHeight: "calc(100vh - 3.5rem)",
+				background: "var(--color-canvas)",
+				display: "flex",
+				flexDirection: "column",
+			}}
+		>
+			{/* Hero section — vertically centered */}
+			<div
+				style={{
+					flex: 1,
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "center",
+					justifyContent: "center",
+					padding: "var(--space-16) var(--space-6)",
+					gap: "var(--space-6)",
+					textAlign: "center",
+					direction: "rtl",
+				}}
+			>
+				<h1
+					style={{
+						fontFamily: "var(--font-display-arabic)",
+						fontSize: "var(--text-3xl)",
+						fontWeight: "var(--weight-semibold)",
+						color: "var(--color-text-primary)",
+						margin: 0,
+						lineHeight: 1.3,
+					}}
+				>
+					مسار الحديث
+				</h1>
+
+				<p
+					style={{
+						fontFamily: "var(--font-ui-latin)",
+						fontSize: "var(--text-lg)",
+						color: "var(--color-text-secondary)",
+						margin: 0,
+						direction: "ltr",
+					}}
+				>
+					Paste a hadith. Trace its chain. Compare its variants.
+				</p>
+
+				<p
+					style={{
+						fontFamily: "var(--font-ui-arabic)",
+						fontSize: "var(--text-md)",
+						color: "var(--color-text-secondary)",
+						margin: 0,
+						maxWidth: "36rem",
+						lineHeight: 1.8,
+					}}
+				>
+					أداة متخصصة لتحليل إسناد الحديث النبوي، واستخراج الرواة، ومقارنة النسخ
+					المختلفة من المتن.
+				</p>
+
+				<div
+					style={{
+						display: "flex",
+						gap: "var(--space-3)",
+						alignItems: "center",
+						direction: "rtl",
+					}}
+				>
+					<button
+						type="button"
+						className="btn-primary"
+						style={{ fontFamily: "var(--font-ui-arabic)" }}
+						onClick={() => navigate({ to: "/dashboard" })}
+					>
+						تحليل الحديث
+					</button>
+					<button
+						type="button"
+						className="btn-ghost"
+						style={{ fontFamily: "var(--font-ui-arabic)" }}
+					>
+						اقرأ عن المشروع
+					</button>
+				</div>
+			</div>
+
+			{/* Footer hint */}
+			<div
+				style={{
+					padding: "var(--space-6)",
+					background: "var(--color-surface-sunken)",
+					borderTop: "1px solid var(--color-border-subtle)",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					gap: "var(--space-2)",
+				}}
+			>
+				<span
+					style={{
+						fontFamily: "var(--font-ui-latin)",
+						fontSize: "var(--text-sm)",
+						color: "var(--color-text-tertiary)",
+					}}
+				>
+					↓ Start analyzing below
+				</span>
 			</div>
 		</div>
 	);

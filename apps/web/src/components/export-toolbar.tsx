@@ -86,6 +86,42 @@ export function ExportToolbar({ exportHook }: ExportToolbarProps) {
 							boxShadow: "var(--shadow-lg)",
 						}}
 					>
+						{/* Title row */}
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "var(--space-2)",
+							}}
+						>
+							<span
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									justifyContent: "center",
+									width: 20,
+									height: 20,
+									borderRadius: "50%",
+									background: "#f97316",
+									color: "#fff",
+									fontSize: 12,
+									fontWeight: "bold",
+									flexShrink: 0,
+								}}
+							>
+								!
+							</span>
+							<span
+								style={{
+									fontFamily: "var(--font-ui-arabic)",
+									fontSize: "var(--text-base)",
+									fontWeight: "var(--weight-semibold)",
+									color: "var(--color-text-primary)",
+								}}
+							>
+								تأكيد الاستيراد
+							</span>
+						</div>
 						<p
 							style={{
 								fontFamily: "var(--font-ui-arabic)",
@@ -233,8 +269,8 @@ export function ExportToolbar({ exportHook }: ExportToolbarProps) {
 							alignItems: "center",
 							gap: "var(--space-3)",
 							padding: "var(--space-2) var(--space-3)",
-							background: "#fef2f2",
-							border: "1px solid #fecaca",
+							background: "var(--color-error-bg, #fef0f0)",
+							border: "1px solid var(--color-error-border, #f0a0a0)",
 							borderRadius: "var(--radius-sm)",
 							marginTop: "var(--space-1)",
 						}}
@@ -243,7 +279,7 @@ export function ExportToolbar({ exportHook }: ExportToolbarProps) {
 							style={{
 								fontFamily: "var(--font-ui-arabic)",
 								fontSize: "var(--text-sm)",
-								color: "#dc2626",
+								color: "var(--color-error-text, #8a1515)",
 								flex: 1,
 							}}
 						>
