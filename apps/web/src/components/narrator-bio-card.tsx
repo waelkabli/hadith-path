@@ -1,3 +1,4 @@
+// figma: 110:28 (S11 Narrator Bio Drawer)
 import type { NarratorRecord } from "@/lib/narrator-database";
 
 const GRADE_TOKENS: Record<

@@ -1,3 +1,4 @@
+// figma: 110:23 (S06 Disambiguation Candidates) · 110:24 (S07 Add Custom Narrator)
 import { useState } from "react";
 
 import type { NarratorMatch } from "@/lib/match-narrators";

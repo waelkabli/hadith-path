@@ -1,3 +1,4 @@
+// figma: 110:32 (S15 Export Toolbar) · 110:33 (S16 Import Confirmation Modal)
 import { useRef, useState } from "react";
 import type { UseExportReturn } from "@/hooks/use-export";
 

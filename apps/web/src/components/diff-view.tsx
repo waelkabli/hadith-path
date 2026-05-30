@@ -1,3 +1,4 @@
+// figma: 110:30 (S13 Diff Inline) · 110:31 (S14 Diff Side-by-Side)
 import { useState } from "react";
 
 import type { Variant } from "@/hooks/use-variants";

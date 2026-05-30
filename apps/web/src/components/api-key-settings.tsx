@@ -1,3 +1,4 @@
+// figma: 110:34 (S17 Settings Panel)
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 

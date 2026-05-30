@@ -1,3 +1,4 @@
+// figma: 110:17 (S00 Landing Page)
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({

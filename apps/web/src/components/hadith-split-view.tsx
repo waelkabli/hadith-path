@@ -1,3 +1,4 @@
+// figma: 110:20 (S03 Split Result)
 interface HadithSplitViewProps {
 	text: string;
 	splitAt: number;

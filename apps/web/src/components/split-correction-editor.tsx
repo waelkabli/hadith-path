@@ -1,3 +1,4 @@
+// figma: 110:25 (S08 Split Correction Editor)
 import { useCallback, useRef, useState } from "react";
 
 import { useSplitCorrection } from "@/hooks/use-split-correction";

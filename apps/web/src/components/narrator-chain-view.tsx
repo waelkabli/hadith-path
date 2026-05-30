@@ -1,3 +1,4 @@
+// figma: 110:21 (S04 Narrator List clean) · 110:22 (S05 disambiguation banner)
 import type { NarratorMatch } from "@/lib/match-narrators";
 import type { NarratorRecord } from "@/lib/narrator-database";
 

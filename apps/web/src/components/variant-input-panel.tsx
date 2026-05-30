@@ -1,3 +1,4 @@
+// figma: 110:29 (S12 Variant Input Panel)
 import { useState } from "react";
 
 import { useApiKey } from "@/hooks/use-api-key";

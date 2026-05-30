@@ -1,3 +1,4 @@
+// figma: 110:27 (S10 Chain Visualization — Multi-Variant)
 import "@xyflow/react/dist/style.css";
 
 import dagre from "@dagrejs/dagre";

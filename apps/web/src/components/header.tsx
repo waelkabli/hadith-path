@@ -1,3 +1,4 @@
+// figma: 0:1 C16 NavHeader (global chrome — appears on every screen)
 import { Settings } from "lucide-react";
 import { useState } from "react";
 

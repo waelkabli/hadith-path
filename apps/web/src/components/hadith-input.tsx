@@ -1,3 +1,4 @@
+// figma: 110:18 (S01 Empty Input) · 110:19 (S02 Parsing)
 import { Loader2 } from "lucide-react";
 
 import { EXAMPLE_HADITH } from "@/constants/hadith-examples";
