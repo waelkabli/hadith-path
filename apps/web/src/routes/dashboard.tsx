@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { Edge, Node, ReactFlowInstance } from "@xyflow/react";
-import { useCallback, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useRef, useState } from "react";
 
 import { DebugPanel } from "@/components/debug-panel";
 import { DiffView } from "@/components/diff-view";
@@ -114,357 +114,381 @@ function RouteComponent() {
 		await extractor.extract(isnad, allRecords);
 	}, [extractor, submittedText, parser.result, allRecords]);
 
+	const cardStyle: CSSProperties = {
+		background: "var(--color-surface)",
+		border: "1px solid var(--color-border-default)",
+		borderRadius: "var(--radius-lg)",
+		boxShadow: "var(--shadow-sm)",
+	};
+
 	return (
 		<>
 			<div
 				style={{
 					minHeight: "calc(100vh - 3.5rem)",
 					background: "var(--color-canvas)",
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					justifyContent: "flex-start",
-					padding: "var(--space-8) var(--space-6)",
-					paddingBottom: "calc(var(--space-8) + 40vh)",
+					padding: "var(--space-6) var(--space-6)",
+					paddingBottom: "var(--space-10)",
 				}}
 			>
-				<div
-					style={{
-						width: "100%",
-						maxWidth: "var(--container-prose)",
-						background: "var(--color-surface)",
-						border: "1px solid var(--color-border-default)",
-						borderRadius: "var(--radius-lg)",
-						boxShadow: "var(--shadow-sm)",
-					}}
-				>
-					<HadithInput onSubmit={handleSubmit} onReset={handleReset} />
-					{parser.result &&
-						(isEditing ? (
-							<SplitCorrectionEditor
-								text={submittedText}
-								splitAt={parser.result.splitAt}
-								llmSplitAt={parser.result.llmSplitAt}
-								onConfirm={(newSplitAt) => {
-									parser.applyCorrection(newSplitAt);
-									setIsEditing(false);
-								}}
-								onCancel={() => setIsEditing(false)}
-							/>
-						) : (
-							<div
-								ref={(el) => {
-									splitViewRef.current = el;
-								}}
-							>
-								<HadithSplitView
-									text={submittedText}
-									splitAt={parser.result.splitAt}
-									corrected={parser.result.corrected}
-									onEditSplit={() => setIsEditing(true)}
-								/>
-							</div>
-						))}
-
-					{/* DB load error banner */}
-					{dbError && (
-						<div
-							style={{
-								borderTop: "1px solid var(--color-border-subtle)",
-								padding: "var(--space-3) var(--space-5)",
-								background: "#fef9c3",
-								direction: "rtl",
-								display: "flex",
-								alignItems: "center",
-								gap: "var(--space-3)",
-							}}
-						>
-							<span
-								style={{
-									fontFamily: "var(--font-ui-arabic)",
-									fontSize: "var(--text-sm)",
-									color: "#92400e",
-									flex: 1,
-								}}
-							>
-								تعذّر تحميل قاعدة بيانات الرواة — المطابقة تعمل على السجلات
-								المخصصة فقط
-							</span>
-						</div>
-					)}
-
-					<div
-						ref={(el) => {
-							narratorListRef.current = el;
-						}}
-					>
-						<NarratorChainView
-							narrators={extractor.narrators}
-							isLoading={extractor.isLoading}
-							error={extractor.error}
-							isStale={extractor.isStale}
-							showReExtract={showReExtract}
-							records={allRecords}
-							onRetry={() =>
-								extractor.extract(
-									submittedText.slice(0, parser.result?.splitAt ?? 0),
-									allRecords,
-								)
-							}
-							onReExtract={handleReExtract}
-							selectedPosition={selectedPosition}
-							onSelect={setSelectedPosition}
-							onStartGuided={() => {
-								if (flaggedNarrators.length === 0) return;
-								setIsInGuidedMode(true);
-								setSelectedPosition(flaggedNarrators[0].position);
-							}}
-						/>
+				<div style={{ width: "100%", maxWidth: "1400px", margin: "0 auto" }}>
+					{/* Input card — full width */}
+					<div style={{ ...cardStyle, marginBottom: "var(--space-4)" }}>
+						<HadithInput onSubmit={handleSubmit} onReset={handleReset} />
 					</div>
 
-					{selectedPosition !== null &&
-						extractor.narrators &&
-						(() => {
-							const nm = extractor.narrators.find(
-								(n) => n.position === selectedPosition,
-							);
-							if (!nm) return null;
-							const candidateRecords = nm.topMatches
-								.map((m) => allRecords.find((r) => r.id === m.narratorId))
-								.filter((r): r is NarratorRecord => r != null);
-							return (
-								<NarratorDisambiguationPanel
-									narratorMatch={nm}
-									candidateRecords={candidateRecords}
-									onConfirm={(narratorId) => {
-										extractor.confirmMatch(selectedPosition, narratorId);
-										if (isInGuidedMode) {
-											const remaining = flaggedNarrators.filter(
-												(n) => n.position !== selectedPosition,
-											);
-											const next = remaining.find(
-												(n) => n.position > selectedPosition,
-											);
-											if (!next) {
-												setIsInGuidedMode(false);
-												setSelectedPosition(null);
-											} else {
-												setSelectedPosition(next.position);
-											}
-										} else {
-											setSelectedPosition(null);
-										}
-									}}
-									onAddCustom={(data) => {
-										const newRecord = customNarrators.add(data);
-										extractor.confirmMatch(selectedPosition, newRecord.id);
-										setIsInGuidedMode(false);
-										setSelectedPosition(null);
-									}}
-									onClose={() => {
-										setIsInGuidedMode(false);
-										setSelectedPosition(null);
-									}}
-									isGuided={isInGuidedMode}
-									hasPrevious={
-										isInGuidedMode &&
-										flaggedNarrators.some(
-											(n) =>
-												n.position <
-												(selectedPosition ?? Number.POSITIVE_INFINITY),
-										)
-									}
-									hasNext={
-										isInGuidedMode &&
-										flaggedNarrators
-											.filter((n) => n.position !== selectedPosition)
-											.some((n) => n.position > (selectedPosition ?? -1))
-									}
-									onPrevious={() => {
-										const prev = [...flaggedNarrators]
-											.reverse()
-											.find(
-												(n) =>
-													n.position <
-													(selectedPosition ?? Number.POSITIVE_INFINITY),
-											);
-										if (prev) setSelectedPosition(prev.position);
-									}}
-									onNext={() => {
-										const next = flaggedNarrators.find(
-											(n) => n.position > (selectedPosition ?? -1),
-										);
-										if (!next) {
-											setIsInGuidedMode(false);
-											setSelectedPosition(null);
-										} else {
-											setSelectedPosition(next.position);
-										}
-									}}
-								/>
-							);
-						})()}
+					{/* Three-column grid — visible once parsed */}
+					{parser.result && (
+						<div
+							style={{
+								display: "grid",
+								gridTemplateColumns: "1fr 1fr 1.5fr",
+								gap: "var(--space-4)",
+								alignItems: "start",
+							}}
+						>
+							{/* Column 1: Split view + DB error */}
+							<div style={cardStyle}>
+								{isEditing ? (
+									<SplitCorrectionEditor
+										text={submittedText}
+										splitAt={parser.result.splitAt}
+										llmSplitAt={parser.result.llmSplitAt}
+										onConfirm={(newSplitAt) => {
+											parser.applyCorrection(newSplitAt);
+											setIsEditing(false);
+										}}
+										onCancel={() => setIsEditing(false)}
+									/>
+								) : (
+									<div
+										ref={(el) => {
+											splitViewRef.current = el;
+										}}
+									>
+										<HadithSplitView
+											text={submittedText}
+											splitAt={parser.result.splitAt}
+											corrected={parser.result.corrected}
+											onEditSplit={() => setIsEditing(true)}
+										/>
+									</div>
+								)}
 
-					{/* Add variant button */}
-					{parser.result !== null &&
-						extractor.narrators !== null &&
-						extractor.narrators.length > 0 &&
-						canAddMore && (
-							<div
-								style={{
-									borderTop: "1px solid var(--color-border-subtle)",
-									padding: "var(--space-3) var(--space-5)",
-									display: "flex",
-									justifyContent: "flex-end",
-									direction: "rtl",
-								}}
-							>
-								<button
-									type="button"
-									className="btn-secondary btn-sm"
-									onClick={addVariant}
-									style={{
-										fontFamily: "var(--font-ui-arabic)",
-										fontSize: "var(--text-sm)",
-									}}
-								>
-									+ إضافة نسخة
-								</button>
-							</div>
-						)}
-
-					{/* Additional variant input panels */}
-					{variants.slice(1).map((variant) => (
-						<VariantInputPanel
-							key={variant.id}
-							variant={variant}
-							allRecords={allRecords}
-							onUpdate={(data) => updateVariant(variant.id, data)}
-							onRemove={() => removeVariant(variant.id)}
-						/>
-					))}
-
-					{/* Chain + Diff tabs */}
-					{extractor.narrators &&
-						extractor.narrators.length > 0 &&
-						(() => {
-							const primaryAsVariant: Variant | null =
-								extractor.narrators && extractor.narrators.length > 0
-									? { ...variants[0], narrators: extractor.narrators }
-									: null;
-							const additionalWithNarrators = variants
-								.slice(1)
-								.filter((v) => v.narrators && v.narrators.length > 0);
-							const variantsForGraph = [
-								...(primaryAsVariant ? [primaryAsVariant] : []),
-								...additionalWithNarrators,
-							];
-							const handleNodeClick = (recordId: string | null) =>
-								setBioPanel(
-									recordId === null
-										? { type: "unknown" }
-										: { type: "record", id: recordId },
-								);
-
-							// Variants for the diff view (primary uses submittedText + parser splitAt)
-							const primaryForDiff: Variant = {
-								...variants[0],
-								rawText: submittedText,
-								splitAt: parser.result?.splitAt ?? null,
-							};
-							const variantsForDiff = [primaryForDiff, ...variants.slice(1)];
-
-							return (
-								<>
-									{/* Export toolbar — visible once analysis is ready */}
-									<ExportToolbar exportHook={exportHook} />
-
-									{/* Tab bar */}
+								{dbError && (
 									<div
 										style={{
 											borderTop: "1px solid var(--color-border-subtle)",
-											display: "flex",
+											padding: "var(--space-3) var(--space-5)",
+											background: "#fef9c3",
 											direction: "rtl",
+											display: "flex",
+											alignItems: "center",
+											gap: "var(--space-3)",
 										}}
 									>
-										{(
-											[
-												{ id: "chain", label: "السلسلة" },
-												{ id: "diff", label: "المقارنة" },
-											] as const
-										).map((tab) => (
+										<span
+											style={{
+												fontFamily: "var(--font-ui-arabic)",
+												fontSize: "var(--text-sm)",
+												color: "#92400e",
+												flex: 1,
+											}}
+										>
+											تعذّر تحميل قاعدة بيانات الرواة — المطابقة تعمل على السجلات
+											المخصصة فقط
+										</span>
+									</div>
+								)}
+							</div>
+
+							{/* Column 2: Narrator chain + disambiguation + variants */}
+							<div style={cardStyle}>
+								<div
+									ref={(el) => {
+										narratorListRef.current = el;
+									}}
+								>
+									<NarratorChainView
+										narrators={extractor.narrators}
+										isLoading={extractor.isLoading}
+										error={extractor.error}
+										isStale={extractor.isStale}
+										showReExtract={showReExtract}
+										records={allRecords}
+										onRetry={() =>
+											extractor.extract(
+												submittedText.slice(0, parser.result?.splitAt ?? 0),
+												allRecords,
+											)
+										}
+										onReExtract={handleReExtract}
+										selectedPosition={selectedPosition}
+										onSelect={setSelectedPosition}
+										onStartGuided={() => {
+											if (flaggedNarrators.length === 0) return;
+											setIsInGuidedMode(true);
+											setSelectedPosition(flaggedNarrators[0].position);
+										}}
+									/>
+								</div>
+
+								{selectedPosition !== null &&
+									extractor.narrators &&
+									(() => {
+										const nm = extractor.narrators.find(
+											(n) => n.position === selectedPosition,
+										);
+										if (!nm) return null;
+										const candidateRecords = nm.topMatches
+											.map((m) => allRecords.find((r) => r.id === m.narratorId))
+											.filter((r): r is NarratorRecord => r != null);
+										return (
+											<NarratorDisambiguationPanel
+												narratorMatch={nm}
+												candidateRecords={candidateRecords}
+												onConfirm={(narratorId) => {
+													extractor.confirmMatch(selectedPosition, narratorId);
+													if (isInGuidedMode) {
+														const remaining = flaggedNarrators.filter(
+															(n) => n.position !== selectedPosition,
+														);
+														const next = remaining.find(
+															(n) => n.position > selectedPosition,
+														);
+														if (!next) {
+															setIsInGuidedMode(false);
+															setSelectedPosition(null);
+														} else {
+															setSelectedPosition(next.position);
+														}
+													} else {
+														setSelectedPosition(null);
+													}
+												}}
+												onAddCustom={(data) => {
+													const newRecord = customNarrators.add(data);
+													extractor.confirmMatch(
+														selectedPosition,
+														newRecord.id,
+													);
+													setIsInGuidedMode(false);
+													setSelectedPosition(null);
+												}}
+												onClose={() => {
+													setIsInGuidedMode(false);
+													setSelectedPosition(null);
+												}}
+												isGuided={isInGuidedMode}
+												hasPrevious={
+													isInGuidedMode &&
+													flaggedNarrators.some(
+														(n) =>
+															n.position <
+															(selectedPosition ?? Number.POSITIVE_INFINITY),
+													)
+												}
+												hasNext={
+													isInGuidedMode &&
+													flaggedNarrators
+														.filter((n) => n.position !== selectedPosition)
+														.some((n) => n.position > (selectedPosition ?? -1))
+												}
+												onPrevious={() => {
+													const prev = [...flaggedNarrators]
+														.reverse()
+														.find(
+															(n) =>
+																n.position <
+																(selectedPosition ?? Number.POSITIVE_INFINITY),
+														);
+													if (prev) setSelectedPosition(prev.position);
+												}}
+												onNext={() => {
+													const next = flaggedNarrators.find(
+														(n) => n.position > (selectedPosition ?? -1),
+													);
+													if (!next) {
+														setIsInGuidedMode(false);
+														setSelectedPosition(null);
+													} else {
+														setSelectedPosition(next.position);
+													}
+												}}
+											/>
+										);
+									})()}
+
+								{/* Add variant button */}
+								{extractor.narrators !== null &&
+									extractor.narrators.length > 0 &&
+									canAddMore && (
+										<div
+											style={{
+												borderTop: "1px solid var(--color-border-subtle)",
+												padding: "var(--space-3) var(--space-5)",
+												display: "flex",
+												justifyContent: "flex-end",
+												direction: "rtl",
+											}}
+										>
 											<button
-												key={tab.id}
 												type="button"
-												onClick={() => setActiveTab(tab.id)}
+												className="btn-secondary btn-sm"
+												onClick={addVariant}
 												style={{
-													padding: "var(--space-3) var(--space-5)",
 													fontFamily: "var(--font-ui-arabic)",
 													fontSize: "var(--text-sm)",
-													color:
-														activeTab === tab.id
-															? "var(--color-text-primary)"
-															: "var(--color-text-tertiary)",
-													background: "transparent",
-													border: "none",
-													borderBottom:
-														activeTab === tab.id
-															? "2px solid var(--color-gold-400)"
-															: "2px solid transparent",
-													cursor: "pointer",
-													lineHeight: 1,
-													fontWeight:
-														activeTab === tab.id
-															? "var(--weight-medium)"
-															: "var(--weight-regular)",
 												}}
 											>
-												{tab.label}
+												+ إضافة نسخة
 											</button>
-										))}
-									</div>
-
-									{/* Tab content */}
-									{activeTab === "chain" ? (
-										<div
-											ref={(el) => {
-												chainContainerRef.current = el;
-											}}
-										>
-											{variantsForGraph.length >= 2 ? (
-												<VariantChainView
-													variants={variantsForGraph}
-													records={allRecords}
-													onNodeClick={handleNodeClick}
-													onInit={(inst) => {
-														rfInstanceRef.current =
-															inst as unknown as ReactFlowInstance<Node, Edge>;
-													}}
-												/>
-											) : (
-												<IsnadChainView
-													narrators={extractor.narrators}
-													records={allRecords}
-													onNodeClick={handleNodeClick}
-													onInit={(inst) => {
-														rfInstanceRef.current =
-															inst as unknown as ReactFlowInstance<Node, Edge>;
-													}}
-												/>
-											)}
-										</div>
-									) : (
-										<div
-											ref={(el) => {
-												diffViewRef.current = el;
-											}}
-										>
-											<DiffView variants={variantsForDiff} />
 										</div>
 									)}
-								</>
-							);
-						})()}
+
+								{/* Additional variant input panels */}
+								{variants.slice(1).map((variant) => (
+									<VariantInputPanel
+										key={variant.id}
+										variant={variant}
+										allRecords={allRecords}
+										onUpdate={(data) => updateVariant(variant.id, data)}
+										onRemove={() => removeVariant(variant.id)}
+									/>
+								))}
+							</div>
+
+							{/* Column 3: Chain / Diff visualization */}
+							{extractor.narrators && extractor.narrators.length > 0 && (
+								<div style={cardStyle}>
+									{(() => {
+										const primaryAsVariant: Variant | null =
+											extractor.narrators && extractor.narrators.length > 0
+												? { ...variants[0], narrators: extractor.narrators }
+												: null;
+										const additionalWithNarrators = variants
+											.slice(1)
+											.filter((v) => v.narrators && v.narrators.length > 0);
+										const variantsForGraph = [
+											...(primaryAsVariant ? [primaryAsVariant] : []),
+											...additionalWithNarrators,
+										];
+										const handleNodeClick = (recordId: string | null) =>
+											setBioPanel(
+												recordId === null
+													? { type: "unknown" }
+													: { type: "record", id: recordId },
+											);
+
+										const primaryForDiff: Variant = {
+											...variants[0],
+											rawText: submittedText,
+											splitAt: parser.result?.splitAt ?? null,
+										};
+										const variantsForDiff = [
+											primaryForDiff,
+											...variants.slice(1),
+										];
+
+										return (
+											<>
+												<ExportToolbar exportHook={exportHook} />
+
+												{/* Tab bar */}
+												<div
+													style={{
+														borderTop: "1px solid var(--color-border-subtle)",
+														display: "flex",
+														direction: "rtl",
+													}}
+												>
+													{(
+														[
+															{ id: "chain", label: "السلسلة" },
+															{ id: "diff", label: "المقارنة" },
+														] as const
+													).map((tab) => (
+														<button
+															key={tab.id}
+															type="button"
+															onClick={() => setActiveTab(tab.id)}
+															style={{
+																padding: "var(--space-3) var(--space-5)",
+																fontFamily: "var(--font-ui-arabic)",
+																fontSize: "var(--text-sm)",
+																color:
+																	activeTab === tab.id
+																		? "var(--color-text-primary)"
+																		: "var(--color-text-tertiary)",
+																background: "transparent",
+																border: "none",
+																borderBottom:
+																	activeTab === tab.id
+																		? "2px solid var(--color-gold-400)"
+																		: "2px solid transparent",
+																cursor: "pointer",
+																lineHeight: 1,
+																fontWeight:
+																	activeTab === tab.id
+																		? "var(--weight-medium)"
+																		: "var(--weight-regular)",
+															}}
+														>
+															{tab.label}
+														</button>
+													))}
+												</div>
+
+												{activeTab === "chain" ? (
+													<div
+														ref={(el) => {
+															chainContainerRef.current = el;
+														}}
+													>
+														{variantsForGraph.length >= 2 ? (
+															<VariantChainView
+																variants={variantsForGraph}
+																records={allRecords}
+																onNodeClick={handleNodeClick}
+																onInit={(inst) => {
+																	rfInstanceRef.current =
+																		inst as unknown as ReactFlowInstance<
+																			Node,
+																			Edge
+																		>;
+																}}
+															/>
+														) : (
+															<IsnadChainView
+																narrators={extractor.narrators}
+																records={allRecords}
+																onNodeClick={handleNodeClick}
+																onInit={(inst) => {
+																	rfInstanceRef.current =
+																		inst as unknown as ReactFlowInstance<
+																			Node,
+																			Edge
+																		>;
+																}}
+															/>
+														)}
+													</div>
+												) : (
+													<div
+														ref={(el) => {
+															diffViewRef.current = el;
+														}}
+													>
+														<DiffView variants={variantsForDiff} />
+													</div>
+												)}
+											</>
+										);
+									})()}
+								</div>
+							)}
+						</div>
+					)}
 				</div>
 			</div>
 			<DebugPanel />
