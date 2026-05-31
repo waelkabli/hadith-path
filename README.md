@@ -17,6 +17,12 @@ Isnad chain analyzer — paste a hadith, and the app separates the isnad from th
 
 The app runs entirely in the browser. Your Anthropic API key is stored locally and never sent anywhere except the Anthropic API directly.
 
+## Screenshots
+
+![Input](docs/screenshot-input.png)
+
+![Dashboard](docs/screenshot-dashboard.png)
+
 ## Tech stack
 
 - **React + TanStack Router** — frontend, file-based routing

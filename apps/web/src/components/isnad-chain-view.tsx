@@ -1,7 +1,6 @@
 // figma: 110:26 (S09 Chain Visualization — Single)
 import "@xyflow/react/dist/style.css";
 
-import dagre from "@dagrejs/dagre";
 import {
 	Background,
 	Controls,
@@ -14,7 +13,7 @@ import {
 	Position,
 	ReactFlow,
 } from "@xyflow/react";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { buildChainGraph, type MatchState } from "@/lib/chain-graph";
 import type { NarratorMatch } from "@/lib/match-narrators";
@@ -22,7 +21,7 @@ import type { NarratorRecord } from "@/lib/narrator-database";
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 
-const NODE_WIDTH = 160;
+const NODE_WIDTH = 180;
 const NODE_HEIGHT = 141;
 
 // ── Grade → visual tokens ─────────────────────────────────────────────────────
@@ -143,17 +142,24 @@ function NarratorNodeComponent({ data }: NodeProps<NarratorNodeType>) {
 				overflow: "visible",
 			}}
 		>
-			{/* Receives edges from the right (earlier narrator) */}
+			{/* Multi-directional handles for snake routing — hidden, used by edges */}
 			<Handle
+				id="t-top"
+				type="target"
+				position={Position.Top}
+				style={{ opacity: 0, width: 6, height: 6 }}
+			/>
+			<Handle
+				id="t-right"
 				type="target"
 				position={Position.Right}
-				style={{
-					background: "#b5b1a8",
-					width: 8,
-					height: 8,
-					border: "none",
-					borderRadius: "50%",
-				}}
+				style={{ opacity: 0, width: 6, height: 6 }}
+			/>
+			<Handle
+				id="t-left"
+				type="target"
+				position={Position.Left}
+				style={{ opacity: 0, width: 6, height: 6 }}
 			/>
 
 			{/* State icon overlay — top-right corner */}
@@ -271,17 +277,23 @@ function NarratorNodeComponent({ data }: NodeProps<NarratorNodeType>) {
 				</span>
 			)}
 
-			{/* Sends edges to the left (later narrator) */}
 			<Handle
+				id="s-left"
 				type="source"
 				position={Position.Left}
-				style={{
-					background: "#b5b1a8",
-					width: 8,
-					height: 8,
-					border: "none",
-					borderRadius: "50%",
-				}}
+				style={{ opacity: 0, width: 6, height: 6 }}
+			/>
+			<Handle
+				id="s-right"
+				type="source"
+				position={Position.Right}
+				style={{ opacity: 0, width: 6, height: 6 }}
+			/>
+			<Handle
+				id="s-bottom"
+				type="source"
+				position={Position.Bottom}
+				style={{ opacity: 0, width: 6, height: 6 }}
 			/>
 		</div>
 	);
@@ -302,30 +314,41 @@ const nodeTypes = { narratorNode: NarratorNodeComponent };
 // RL layout places it on the right. We also reverse the reactflow edge
 // source/target so arrows point Companion → Collector (right to left).
 
+// Snake layout: 2 nodes per row, alternating direction each row.
+// Row 0 (even): Companion (top-right) → next node (top-left)
+// Row 1 (odd):  continues left → right
+// Row 2 (even): continues right → left  … and so on.
 function buildLayout(
 	chainNodes: ReturnType<typeof buildChainGraph>["nodes"],
 	chainEdges: ReturnType<typeof buildChainGraph>["edges"],
 ): { rfNodes: Node<NarratorNodeData>[]; rfEdges: Edge[] } {
-	const g = new dagre.graphlib.Graph();
-	g.setDefaultEdgeLabel(() => ({}));
-	g.setGraph({ rankdir: "RL", ranksep: 80, nodesep: 40 });
+	const N = chainNodes.length;
+	const COLS = 2;
+	const COL_GAP = 80;
+	const ROW_GAP = 60;
+	const COL_WIDTH = NODE_WIDTH + COL_GAP;
+	const ROW_HEIGHT = NODE_HEIGHT + ROW_GAP;
+	const lastIdx = N - 1;
 
-	for (const node of chainNodes) {
-		g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
-	}
-	for (const edge of chainEdges) {
-		// Reversed: last-mentioned (Companion) becomes dagre source → placed right.
-		g.setEdge(edge.target, edge.source);
-	}
-	dagre.layout(g);
-
-	const lastIdx = chainNodes.length - 1;
 	const rfNodes: Node<NarratorNodeData>[] = chainNodes.map((n, i) => {
-		const pos = g.node(n.id);
+		// d = display index, 0 = Companion (top-right), N-1 = Collector
+		const d = lastIdx - i;
+		const row = Math.floor(d / COLS);
+		const posInRow = d % COLS;
+		// Even rows go right→left, odd rows snake back left→right
+		const x =
+			row % 2 === 0
+				? posInRow === 0
+					? COL_WIDTH
+					: 0
+				: posInRow === 0
+					? 0
+					: COL_WIDTH;
+		const y = row * ROW_HEIGHT;
 		return {
 			id: n.id,
 			type: "narratorNode",
-			position: { x: pos.x - NODE_WIDTH / 2, y: pos.y - NODE_HEIGHT / 2 },
+			position: { x, y },
 			data: {
 				label: n.extractedName,
 				matchState: n.matchState,
@@ -337,15 +360,45 @@ function buildLayout(
 		};
 	});
 
-	// Reversed edges: arrows flow from Companion (right) to collector (left).
-	const rfEdges: Edge[] = chainEdges.map((e, i) => ({
-		id: `e-${i}`,
-		source: e.target,
-		target: e.source,
-		type: "smoothstep",
-		markerEnd: { type: MarkerType.ArrowClosed, color: "#9ca3af" },
-		style: { stroke: "#9ca3af", strokeWidth: 1.5 },
-	}));
+	// Build position map so each edge can pick the correct handles.
+	const posMap = new Map(rfNodes.map((n) => [n.id, n.position]));
+
+	// Arrows flow Companion → Collector (reversed from isnad text order).
+	// Pick source/target handles based on relative node position so smoothstep
+	// routes cleanly through the snake turns instead of looping back.
+	const rfEdges: Edge[] = chainEdges.map((e, i) => {
+		const srcId = e.target; // companion-side (reversed)
+		const tgtId = e.source; // collector-side (reversed)
+		const src = posMap.get(srcId)!;
+		const tgt = posMap.get(tgtId)!;
+
+		let sourceHandle: string;
+		let targetHandle: string;
+		if (src.y < tgt.y - 10) {
+			// Vertical: source above target → exit bottom, enter top
+			sourceHandle = "s-bottom";
+			targetHandle = "t-top";
+		} else if (src.x > tgt.x + 10) {
+			// Horizontal right-to-left: exit source-left, enter target-right
+			sourceHandle = "s-left";
+			targetHandle = "t-right";
+		} else {
+			// Horizontal left-to-right: exit source-right, enter target-left
+			sourceHandle = "s-right";
+			targetHandle = "t-left";
+		}
+
+		return {
+			id: `e-${i}`,
+			source: srcId,
+			target: tgtId,
+			sourceHandle,
+			targetHandle,
+			type: "smoothstep",
+			markerEnd: { type: MarkerType.ArrowClosed, color: "#9ca3af" },
+			style: { stroke: "#9ca3af", strokeWidth: 1.5 },
+		};
+	});
 
 	return { rfNodes, rfEdges };
 }
@@ -370,14 +423,21 @@ export function IsnadChainView({
 		return buildLayout(graph.nodes, graph.edges);
 	}, [narrators, records]);
 
+	// Fit after ReactFlow initialises so all nodes are measured correctly.
+	const handleInit: OnInit<Node<NarratorNodeData>, Edge> = useCallback(
+		(instance) => {
+			onInit?.(instance);
+			setTimeout(() => instance.fitView({ padding: 0.12, duration: 200 }), 50);
+		},
+		[onInit],
+	);
+
 	if (narrators.length === 0) return null;
 
 	return (
 		<div
 			style={{
-				// borderTop is owned by the dashboard wrapper so the bio card
-				// shares the same top border line.
-				height: 320,
+				height: "100%",
 				direction: "ltr",
 			}}
 		>
@@ -386,13 +446,13 @@ export function IsnadChainView({
 				edges={rfEdges}
 				nodeTypes={nodeTypes}
 				fitView
-				fitViewOptions={{ padding: 0.3 }}
-				minZoom={0.25}
+				fitViewOptions={{ padding: 0.12 }}
+				minZoom={0.2}
 				maxZoom={2}
 				nodesDraggable={false}
 				nodesConnectable={false}
 				elementsSelectable={false}
-				onInit={onInit}
+				onInit={handleInit}
 				onNodeClick={
 					onNodeClick
 						? (_evt, node) => {

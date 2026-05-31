@@ -81,7 +81,7 @@ export function HadithInput({ onSubmit, onReset }: UseHadithInputOptions = {}) {
 				onChange={(e) => onChange(e.target.value)}
 				placeholder="الصق نص الحديث هنا…"
 				dir="rtl"
-				rows={12}
+				rows={5}
 			/>
 			{error && (
 				<p className="input-error-msg" dir="rtl">

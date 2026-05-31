@@ -415,7 +415,7 @@ export function VariantChainView({
 	return (
 		<div
 			style={{
-				height: 320,
+				height: "100%",
 				direction: "ltr",
 				position: "relative",
 			}}
