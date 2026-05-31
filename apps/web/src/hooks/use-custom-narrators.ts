@@ -21,6 +21,7 @@ export interface UseCustomNarratorsReturn {
 	) => NarratorRecord;
 	update: (id: string, fields: Partial<EditableFields>) => void;
 	remove: (id: string) => void;
+	clearAll: () => void;
 }
 
 // Module-level subscriber set so all hook instances stay in sync when any one
@@ -110,5 +111,11 @@ export function useCustomNarrators(): UseCustomNarratorsReturn {
 		});
 	};
 
-	return { customNarrators, add, update, remove };
+	const clearAll = (): void => {
+		setCustomNarrators([]);
+		writeToStorage([]);
+		notifySubscribers();
+	};
+
+	return { customNarrators, add, update, remove, clearAll };
 }

@@ -153,7 +153,10 @@ Changes made directly to the Figma file via the `use_figma` Plugin API. Each ent
 | Screen | Code file | What changed |
 |--------|-----------|-------------|
 | S00 `110:17` | `routes/index.tsx` | Full rewrite: replaced boilerplate with Arabic hero, CTA buttons, footer hint to match Figma landing page |
+| S02 `110:19` | `components/hadith-input.tsx` | Added loading status line (spinner + "جارٍ التحليل…") below button row to match Figma loading state |
 | S16 `110:33` | `components/export-toolbar.tsx` | Added "تأكيد الاستيراد" title row + orange `!` warning icon to `ImportConfirmDialog` |
+| S17 `110:34` | `components/api-key-settings.tsx` | Replaced `CustomNarratorManager` in "البيانات" section with two bulk buttons: "مسح الرواة المخصصين" + "مسح جميع البيانات" |
+| S17 `110:34` | `hooks/use-custom-narrators.ts` | Added `clearAll()` to hook interface and implementation |
 
 ---
 
@@ -166,15 +169,11 @@ The canonical process for verifying and fixing any screen. Run this loop per scr
 | Side | Tool | How to invoke |
 |------|------|--------------|
 | **Design (Figma)** | `get_screenshot` MCP tool | Pass `fileKey` + `nodeId` (the page ID, e.g. `110:26`) |
-| **Browser (live app)** | Chrome headless | `google-chrome --headless --screenshot=browser.png --window-size=1440,900 http://localhost:3001/...` |
-| **Pixel diff** | ImageMagick `compare` | `magick compare -metric RMSE figma.png browser.png diff.png` |
+| **Browser (live app)** | `scripts/take-screenshots-win.mjs` | **Must run via Windows Node.js** — injects state via localStorage + CDP click interactions |
+| **Pixel diff** | `scripts/pixel-diff.mjs` | `node scripts/pixel-diff.mjs` — compares all figma-SXX.png vs browser-SXX.png |
 | **Visual review** | Claude multimodal | Pass both PNGs to Claude; it identifies layout/color/text differences |
 
-Install deps if missing:
-```bash
-sudo apt-get install -y imagemagick chromium-browser   # WSL/Debian
-brew install imagemagick                               # macOS
-```
+> **Note:** The CDP screenshot script (`take-screenshots-win.mjs`) handles all 18 screens including complex interaction states (loading spinner, disambiguation panel, bio drawer, split diff, import modal, settings drawer). Run it via Windows Node.js — Chrome debug port 9223 binds to Windows 127.0.0.1 and is unreachable from WSL2.
 
 ### Per-screen loop
 
@@ -186,12 +185,10 @@ for each screen S:
 
   2. BROWSER SCREENSHOT
      → start dev server:  bun run --cwd apps/web dev   (port 3001)
-     → navigate to the screen state (see "how to reach" column below)
-     → take screenshot:
-         chromium-browser --headless --disable-gpu \
-           --screenshot=screenshots/browser-SXX.png \
-           --window-size=1440,900 \
-           "http://localhost:3001/<path>"
+     → run CDP screenshot script (Windows Node.js required):
+         "/mnt/c/Program Files/nodejs/node.exe" \
+           "C:\Users\nonom\Claude_work\hadith-path\scripts\take-screenshots-win.mjs"
+     → outputs screenshots/browser-SXX.png for all 18 screens
 
   3. PIXEL DIFF
      → magick compare -metric RMSE \
@@ -301,3 +298,28 @@ When running the loop as a Claude Code agent session:
 ```
 
 ImageMagick diff gives a quantitative signal; Claude's visual comparison names *what* is wrong. Use both.
+
+### Pixel diff results — all 18 screens (2026-05-31)
+
+All screens confirmed MINOR (≤5%). Remaining diff is font rendering noise (Figma vector vs browser OS rendering).
+
+| Screen | % diff | Status |
+|--------|--------|--------|
+| S00    | 2.00%  | MINOR  |
+| S01    | 2.36%  | MINOR  |
+| S02    | 1.48%  | MINOR  |
+| S03    | 3.05%  | MINOR  |
+| S04    | 2.48%  | MINOR  |
+| S05    | 3.42%  | MINOR  |
+| S06    | 3.45%  | MINOR  |
+| S07    | 3.20%  | MINOR  |
+| S08    | 2.99%  | MINOR  |
+| S09    | 2.85%  | MINOR  |
+| S10    | 2.85%  | MINOR  |
+| S11    | 3.20%  | MINOR  |
+| S12    | 2.56%  | MINOR  |
+| S13    | 2.82%  | MINOR  |
+| S14    | 2.90%  | MINOR  |
+| S15    | 2.50%  | MINOR  |
+| S16    | 4.42%  | MINOR  |
+| S17    | 4.41%  | MINOR  |

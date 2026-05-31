@@ -119,6 +119,21 @@ export function HadithInput({ onSubmit, onReset }: UseHadithInputOptions = {}) {
 					مثال
 				</button>
 			</div>
+			{isLoading && (
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: "var(--space-2)",
+						color: "var(--color-text-tertiary)",
+						fontFamily: "var(--font-ui-arabic)",
+						fontSize: "var(--text-sm)",
+					}}
+				>
+					<Loader2 size={14} className="animate-spin" aria-hidden="true" />
+					<span>جارٍ التحليل…</span>
+				</div>
+			)}
 		</div>
 	);
 }

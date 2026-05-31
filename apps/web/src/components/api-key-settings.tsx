@@ -3,7 +3,15 @@ import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useApiKey } from "@/hooks/use-api-key";
-import { CustomNarratorManager } from "./custom-narrator-manager";
+import { useCustomNarrators } from "@/hooks/use-custom-narrators";
+
+const ALL_SESSION_KEYS = [
+	"hadith-input-raw",
+	"hadith-parse-result",
+	"hadith-narrator-extraction",
+	"hadith-variants",
+	"hadith-custom-narrators",
+];
 
 interface ApiKeySettingsProps {
 	isOpen: boolean;
@@ -12,6 +20,7 @@ interface ApiKeySettingsProps {
 
 export function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps) {
 	const { apiKey, setApiKey } = useApiKey();
+	const { clearAll: clearCustomNarrators } = useCustomNarrators();
 	const [draft, setDraft] = useState(apiKey ?? "");
 	const inputRef = useRef<HTMLInputElement>(null);
 
@@ -257,7 +266,45 @@ export function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps) {
 						>
 							البيانات
 						</span>
-						<CustomNarratorManager />
+						<button
+							type="button"
+							onClick={clearCustomNarrators}
+							style={{
+								fontFamily: "var(--font-ui-arabic)",
+								fontSize: "var(--text-sm)",
+								color: "var(--color-text-primary)",
+								background: "none",
+								border: "1px solid var(--color-border-default)",
+								borderRadius: "var(--radius-md)",
+								cursor: "pointer",
+								padding: "var(--space-2) var(--space-4)",
+								textAlign: "center",
+								width: "fit-content",
+							}}
+						>
+							مسح الرواة المخصصين
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								for (const k of ALL_SESSION_KEYS) localStorage.removeItem(k);
+								window.location.reload();
+							}}
+							style={{
+								fontFamily: "var(--font-ui-arabic)",
+								fontSize: "var(--text-sm)",
+								color: "var(--color-gold-700, #92400e)",
+								background: "none",
+								border: "1px solid var(--color-gold-400, #d97706)",
+								borderRadius: "var(--radius-md)",
+								cursor: "pointer",
+								padding: "var(--space-2) var(--space-4)",
+								textAlign: "center",
+								width: "fit-content",
+							}}
+						>
+							مسح جميع البيانات
+						</button>
 					</div>
 				</div>
 			</div>
