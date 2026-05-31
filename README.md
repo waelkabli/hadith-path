@@ -51,7 +51,7 @@ Start the dev server:
 bun run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). Add your Anthropic API key in the settings panel to enable AI features.
+Open [http://localhost:3001](http://localhost:3001). Add your Anthropic API key in the settings panel to enable AI features.
 
 ## Project structure
 
